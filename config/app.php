@@ -122,5 +122,6 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+    'media_disc' => env('MEDIA_DISK', 'public'), // Default to 'public'
 
 ];
