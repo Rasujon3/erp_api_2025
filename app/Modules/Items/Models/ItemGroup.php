@@ -2,14 +2,10 @@
 
 namespace App\Modules\Items\Models;
 
-use App\Modules\Admin\Models\Country;
-use App\Modules\States\Models\State;
-use App\Modules\TaxRates\Models\TaxRate;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ItemGroup extends Model
 {
@@ -32,5 +28,15 @@ class ItemGroup extends Model
     public function items(): HasMany
     {
         return $this->hasMany(Item::class, 'item_group_id');
+    }
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($itemGroup) {
+            if ($itemGroup->items()->exists()) {
+                throw new Exception("This item group is used and cannot be deleted.");
+            }
+        });
     }
 }

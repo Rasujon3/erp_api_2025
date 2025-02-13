@@ -11,8 +11,10 @@ use App\Modules\Stores\Requests\StoreRequest;
 use App\Modules\TaxRates\Queries\TaxRateDatatable;
 use App\Modules\TaxRates\Repositories\TaxRateRepository;
 use App\Modules\TaxRates\Requests\TaxRateRequest;
+use Exception;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AppBaseController;
+use Illuminate\Support\Facades\Log;
 
 class ItemGroupController extends AppBaseController
 {
@@ -81,12 +83,22 @@ class ItemGroupController extends AppBaseController
 //    public function destroy(Item Group $state)
     public function destroy($itemGroup)
     {
-        $data = $this->itemGroupRepository->find($itemGroup);
-        // check if state exists
-        if (!$data) {
-            return $this->sendError('Item Group not found');
+        try {
+            $data = $this->itemGroupRepository->find($itemGroup);
+
+            if (!$data) {
+                return $this->sendError('Item Group not found');
+            }
+
+            // Attempt to delete
+            $this->itemGroupRepository->delete($data);
+
+            return $this->sendSuccess('Item Group deleted successfully!');
+        } catch (Exception $e) {
+            Log::error('Item Group Deletion Error: ' . $e->getMessage());
+
+            // Return error response
+            return $this->sendError($e->getMessage(), 400);
         }
-        $this->itemGroupRepository->delete($data);
-        return $this->sendSuccess('Item Group deleted successfully!');
     }
 }

@@ -5,7 +5,7 @@ namespace App\Modules\Items\Repositories;
 use App\Modules\Admin\Models\Country;
 use App\Helpers\ActivityLogger;
 use App\Modules\City\Models\City;
-use App\Modules\Items\Models\ItemGroup;
+use App\Modules\Items\Models\Item;
 use App\Modules\States\Models\State;
 use App\Modules\Stores\Models\Store;
 use App\Modules\TaxRates\Models\TaxRate;
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
-class ItemGroupRepository
+class ItemRepository
 {
 
 
@@ -21,24 +21,24 @@ class ItemGroupRepository
     {
         # $states = Store::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalItemGroup = ItemGroup::get()->count();
+        $totalItem = Item::get()->count();
 
         return [
-            'totalItemGroup' => $totalItemGroup,
+            'totalItem' => $totalItem,
         ];
     }
     public function all()
     {
-        return ItemGroup::cursor(); // Load all records
+        return Item::cursor(); // Load all records
     }
 
-    public function store(array $data): ?ItemGroup
+    public function store(array $data): ?Item
     {
         try {
             DB::beginTransaction();
 
-            // Create the ItemGroup record in the database
-            $store = ItemGroup::create($data);
+            // Create the Item record in the database
+            $store = Item::create($data);
 
             // Log activity
 //            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
@@ -53,7 +53,7 @@ class ItemGroupRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error in storing ItemGroup: ' . $e->getMessage(), [
+            Log::error('Error in storing Item: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -61,21 +61,21 @@ class ItemGroupRepository
         }
     }
 
-    public function update(ItemGroup $itemGroup, array $data): ?ItemGroup
+    public function update(Item $item, array $data): ?Item
     {
         try {
             DB::beginTransaction();
 
             // Perform the update
-            $itemGroup->update($data);
+            $item->update($data);
 
             DB::commit();
-            return $itemGroup;
+            return $item;
         } catch (Exception $e) {
             DB::rollBack();
 
             // Log the error
-            Log::error('Error updating Item Group: ' . $e->getMessage(), [
+            Log::error('Error updating Tax Rate: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -84,15 +84,12 @@ class ItemGroupRepository
     }
 
 
-    /**
-     * @throws Exception
-     */
-    public function delete(ItemGroup $itemGroup): bool
+    public function delete(Item $item): bool
     {
         try {
             DB::beginTransaction();
             // Perform soft delete
-            $deleted = $itemGroup->delete();
+            $deleted = $item->delete();
             if (!$deleted) {
                 DB::rollBack();
                 return false;
@@ -109,22 +106,27 @@ class ItemGroupRepository
 
             // Log error
             Log::error('Error deleting Tax Rate: ' . $e->getMessage(), [
-                'state_id' => $itemGroup->id,
+                'state_id' => $item->id,
                 'trace' => $e->getTraceAsString()
             ]);
-            // Throw the error explicitly to be caught in the controller
-            throw new Exception($e->getMessage());
+
+            return false;
         }
     }
 
 
     public function find($id)
     {
-        return ItemGroup::find($id);
+        return Item::find($id);
     }
     public function getData($id)
     {
-        $store = ItemGroup::where('id', $id)->first();
+        $store = Item::leftJoin('tax_rates', 'items.tax_1_id', '=', 'tax_rates.id')
+            ->leftJoin('tax_rates as tax_2', 'items.tax_2_id', '=', 'tax_2.id')
+            ->leftJoin('item_groups', 'items.item_group_id', '=', 'item_groups.id')
+            ->where('items.id', $id)
+            ->select('items.*', 'tax_rates.name as tax_1_name', 'tax_2.name as tax_2_name', 'item_groups.name as item_group_name')
+            ->first();
         return $store;
     }
 }

@@ -83,6 +83,9 @@ class TaxRateRepository
     }
 
 
+    /**
+     * @throws Exception
+     */
     public function delete(TaxRate $taxRate): bool
     {
         try {
@@ -109,7 +112,8 @@ class TaxRateRepository
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return false;
+            // Throw the error explicitly to be caught in the controller
+            throw new Exception($e->getMessage());
         }
     }
 

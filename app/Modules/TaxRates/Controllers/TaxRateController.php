@@ -8,8 +8,10 @@ use App\Modules\Stores\Requests\StoreRequest;
 use App\Modules\TaxRates\Queries\TaxRateDatatable;
 use App\Modules\TaxRates\Repositories\TaxRateRepository;
 use App\Modules\TaxRates\Requests\TaxRateRequest;
+use Exception;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AppBaseController;
+use Illuminate\Support\Facades\Log;
 
 class TaxRateController extends AppBaseController
 {
@@ -78,12 +80,23 @@ class TaxRateController extends AppBaseController
 //    public function destroy(Tax Rate $state)
     public function destroy($taxRate)
     {
-        $data = $this->taxRateRepository->find($taxRate);
-        // check if state exists
-        if (!$data) {
-            return $this->sendError('Tax Rate not found');
+        try {
+            $data = $this->taxRateRepository->find($taxRate);
+
+            if (!$data) {
+                return $this->sendError('Tax Rate not found');
+            }
+
+            // Attempt to delete
+            $this->taxRateRepository->delete($data);
+
+            return $this->sendSuccess('Tax Rate deleted successfully!');
+        } catch (Exception $e) {
+            Log::error('Tax Rate Deletion Error: ' . $e->getMessage());
+
+            // Return error response
+            return $this->sendError($e->getMessage(), 400);
         }
-        $this->taxRateRepository->delete($data);
-        return $this->sendSuccess('Tax Rate deleted successfully!');
     }
+
 }
