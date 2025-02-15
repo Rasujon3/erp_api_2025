@@ -3,9 +3,11 @@
 namespace App\Modules\Divisions\Models;
 
 use App\Modules\Groups\Models\Group;
+use App\Modules\Warehouses\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Division extends Model
@@ -32,6 +34,11 @@ class Division extends Model
     // belongsTo
     public function group() : BelongsTo
     {
-        return $this->belongsTo(Group::class);
+        return $this->belongsTo(Group::class, 'group_id');
+    }
+    // hasMany
+    public function warehouse() : hasMany
+    {
+        return $this->hasMany(Warehouse::class, 'division_id');
     }
 }

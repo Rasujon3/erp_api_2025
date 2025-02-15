@@ -80,6 +80,10 @@ class DivisionController extends AppBaseController
         if (!$data) {
             return $this->sendError('Division not found');
         }
+        $checkExist = $this->divisionRepository->checkExist($division);
+        if ($checkExist) {
+            return $this->sendError('Division already used, cannot be deleted', 400);
+        }
         $this->divisionRepository->delete($data);
         return $this->sendSuccess('Division deleted successfully!');
     }

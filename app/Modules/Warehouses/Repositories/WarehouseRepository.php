@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Divisions\Repositories;
+namespace App\Modules\Warehouses\Repositories;
 
 use App\Modules\Admin\Models\Country;
 use App\Helpers\ActivityLogger;
@@ -20,30 +20,30 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
-class DivisionRepository
+class WarehouseRepository
 {
     public function getSummaryData()
     {
-        $divisions = Division::withTrashed()->get(); // Load all records including soft-deleted
+        $warehouses = Warehouse::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalDivisions = $divisions->count();
+        $totalWarehouses = $warehouses->count();
 
         return [
-            'totalDivisions' => $totalDivisions,
+            'totalWarehouses' => $totalWarehouses,
         ];
     }
     public function all()
     {
-        return Division::cursor(); // Load all records
+        return Warehouse::cursor(); // Load all records
     }
 
-    public function store(array $data): ?Division
+    public function store(array $data): ?Warehouse
     {
         try {
             DB::beginTransaction();
 
-            // Create the Division record in the database
-            $store = Division::create($data);
+            // Create the Warehouse record in the database
+            $store = Warehouse::create($data);
 
             // Log activity
 //            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
@@ -58,7 +58,7 @@ class DivisionRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error in storing Division: ' . $e->getMessage(), [
+            Log::error('Error in storing Warehouse: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -66,21 +66,21 @@ class DivisionRepository
         }
     }
 
-    public function update(Division $group, array $data): ?Division
+    public function update(Warehouse $warehouse, array $data): ?Warehouse
     {
         try {
             DB::beginTransaction();
 
             // Perform the update
-            $group->update($data);
+            $warehouse->update($data);
 
             DB::commit();
-            return $group;
+            return $warehouse;
         } catch (Exception $e) {
             DB::rollBack();
 
             // Log the error
-            Log::error('Error updating Division: ' . $e->getMessage(), [
+            Log::error('Error updating Warehouse: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -92,12 +92,12 @@ class DivisionRepository
     /**
      * @throws Exception
      */
-    public function delete(Division $group): bool
+    public function delete(Warehouse $warehouse): bool
     {
         try {
             DB::beginTransaction();
             // Perform soft delete
-            $deleted = $group->delete();
+            $deleted = $warehouse->delete();
             if (!$deleted) {
                 DB::rollBack();
                 return false;
@@ -114,7 +114,7 @@ class DivisionRepository
 
             // Log error
             Log::error('Error deleting Sample Category: ' . $e->getMessage(), [
-                'state_id' => $group->id,
+                'state_id' => $warehouse->id,
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -125,19 +125,19 @@ class DivisionRepository
 
     public function find($id)
     {
-        return Division::find($id);
+        return Warehouse::find($id);
     }
     public function getData($id)
     {
-        $division = Division::leftJoin('groups', 'divisions.group_id', '=', 'groups.id')
-            ->where('divisions.id', $id)
-            ->select(['divisions.*', 'groups.name as group_name'])
+        $warehouse = Warehouse::leftJoin('divisions', 'warehouses.division_id', '=', 'divisions.id')
+            ->where('warehouses.id', $id)
+            ->select(['warehouses.*', 'divisions.name as division_name'])
             ->first();
-        return $division;
+        return $warehouse;
     }
     public function checkExist($id)
     {
-        $exist = Warehouse::where('division_id', $id)->exists();
+        $exist = SampleReceiving::where('section', $id)->exists();
         if ($exist) {
             return true;
         }

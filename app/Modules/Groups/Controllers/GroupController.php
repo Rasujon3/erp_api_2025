@@ -66,10 +66,6 @@ class GroupController extends AppBaseController
         if (!$data) {
             return $this->sendError('Group not found');
         }
-        $checkExist = $this->groupRepository->checkExist($group);
-        if (!$checkExist) {
-            return $this->sendError('Group already used, cannot be deleted', 400);
-        }
         $this->groupRepository->update($data, $request->all());
         return $this->sendResponse($group, 'Group updated successfully!');
     }
@@ -82,6 +78,10 @@ class GroupController extends AppBaseController
         // check if state exists
         if (!$data) {
             return $this->sendError('Group not found');
+        }
+        $checkExist = $this->groupRepository->checkExist($group);
+        if ($checkExist) {
+            return $this->sendError('Group already used, cannot be deleted', 400);
         }
         $this->groupRepository->delete($data);
         return $this->sendSuccess('Group deleted successfully!');
