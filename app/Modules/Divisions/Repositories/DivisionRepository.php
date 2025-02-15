@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Groups\Repositories;
+namespace App\Modules\Divisions\Repositories;
 
 use App\Modules\Admin\Models\Country;
 use App\Helpers\ActivityLogger;
@@ -19,30 +19,30 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
-class GroupRepository
+class DivisionRepository
 {
     public function getSummaryData()
     {
-        $groups = Group::withTrashed()->get(); // Load all records including soft-deleted
+        $divisions = Division::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalGroups = $groups->count();
+        $totalDivisions = $divisions->count();
 
         return [
-            'totalGroups' => $totalGroups,
+            'totalDivisions' => $totalDivisions,
         ];
     }
     public function all()
     {
-        return Group::cursor(); // Load all records
+        return Division::cursor(); // Load all records
     }
 
-    public function store(array $data): ?Group
+    public function store(array $data): ?Division
     {
         try {
             DB::beginTransaction();
 
-            // Create the Group record in the database
-            $store = Group::create($data);
+            // Create the Division record in the database
+            $store = Division::create($data);
 
             // Log activity
 //            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
@@ -57,7 +57,7 @@ class GroupRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error in storing Group: ' . $e->getMessage(), [
+            Log::error('Error in storing Division: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -65,7 +65,7 @@ class GroupRepository
         }
     }
 
-    public function update(Group $group, array $data): ?Group
+    public function update(Division $group, array $data): ?Division
     {
         try {
             DB::beginTransaction();
@@ -79,7 +79,7 @@ class GroupRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error updating Group: ' . $e->getMessage(), [
+            Log::error('Error updating Division: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -91,7 +91,7 @@ class GroupRepository
     /**
      * @throws Exception
      */
-    public function delete(Group $group): bool
+    public function delete(Division $group): bool
     {
         try {
             DB::beginTransaction();
@@ -124,16 +124,19 @@ class GroupRepository
 
     public function find($id)
     {
-        return Group::find($id);
+        return Division::find($id);
     }
     public function getData($id)
     {
-        $store = Group::where('id', $id)->first();
-        return $store;
+        $division = Division::leftJoin('groups', 'divisions.group_id', '=', 'groups.id')
+            ->where('divisions.id', $id)
+            ->select(['divisions.*', 'groups.name as group_name'])
+            ->first();
+        return $division;
     }
     public function checkExist($id)
     {
-        $exist = Division::where('group_id', $id)->exists();
+        $exist = SampleReceiving::where('section', $id)->exists();
         if ($exist) {
             return true;
         }
