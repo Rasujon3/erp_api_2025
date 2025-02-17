@@ -19,9 +19,9 @@ class BranchRepository
 
     public function getSummaryData()
     {
-        # $states = City::withTrashed()->get(); // Load all records including soft-deleted
+        $branches = Branch::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalBranches = Branch::get()->count();
+        $totalBranches = $branches->count();
         $countries = Country::select('id', 'name')->get();
         $currencies = Currency::select('id', 'name')->get();
 
@@ -42,17 +42,16 @@ class BranchRepository
             DB::beginTransaction();
 
             // Create the Branch record in the database
-            $area = Branch::create($data);
+            $branch = Branch::create($data);
 
             // Log activity
-//            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? ''
-//            ]);
+            ActivityLogger::log('Branch Add', 'Branches', 'Branch', $branch->id, [
+                'name' => $branch->name ?? '',
+            ]);
 
             DB::commit();
 
-            return $area;
+            return $branch;
         } catch (Exception $e) {
             DB::rollBack();
 
@@ -65,16 +64,20 @@ class BranchRepository
         }
     }
 
-    public function update(Branch $city, array $data): ?Branch
+    public function update(Branch $branch, array $data): ?Branch
     {
         try {
             DB::beginTransaction();
 
             // Perform the update
-            $city->update($data);
+            $branch->update($data);
+            // Log activity for update
+            ActivityLogger::log('Branch Updated', 'Branches', 'Branch', $branch->id, [
+                'name' => $branch->name
+            ]);
 
             DB::commit();
-            return $city;
+            return $branch;
         } catch (Exception $e) {
             DB::rollBack();
 
@@ -88,21 +91,20 @@ class BranchRepository
     }
 
 
-    public function delete(Branch $area): bool
+    public function delete(Branch $branch): bool
     {
         try {
             DB::beginTransaction();
             // Perform soft delete
-            $deleted = $area->delete();
+            $deleted = $branch->delete();
             if (!$deleted) {
                 DB::rollBack();
                 return false;
             }
             // Log activity after successful deletion
-//            ActivityLogger::log('Country Deleted', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? '',
-//            ]);
+            ActivityLogger::log('Branch Deleted', 'Branches', 'Branch', $branch->id, [
+                'name' => $branch->name ?? '',
+            ]);
             DB::commit();
             return true;
         } catch (Exception $e) {
@@ -110,7 +112,7 @@ class BranchRepository
 
             // Log error
             Log::error('Error deleting state: ' . $e->getMessage(), [
-                'state_id' => $area->id,
+                'state_id' => $branch->id,
                 'trace' => $e->getTraceAsString()
             ]);
 

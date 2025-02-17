@@ -33,13 +33,7 @@ class BranchRequest extends FormRequest
      */
     public function rules()
     {
-//        $areaId = $this->route('area') ? $this->route('area')->id : null;
-        $branchId = (int) $this->route('branch') ?: null;
-//        $branchId = $this->route('branch') ?: null;
-        $name = $this->input('name');
-        Log::info('$branchId ID from route:', ['areaId' => $branchId]); // Log the value
-        Log::info('$branchId ID from name:', ['areaId' => $name]); // Log the value
+        $branchId = $this->route('branch') ?: null;
         return Branch::rules($branchId);
-//        return Area::rules($name);
     }
 }

@@ -13,8 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class Branch extends Model
 {
-//    use HasFactory, SoftDeletes;
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'branches';
 
@@ -34,7 +33,6 @@ class Branch extends Model
 
     public static function rules($branchId = null)
     {
-        Log::info('$branchId ID from model:', ['$branchId' => $branchId]);
         return [
             'company_name' => 'required',
             'name' => 'required|unique:branches,name,' . $branchId . ',id', // Make sure the name is unique except for the current area
