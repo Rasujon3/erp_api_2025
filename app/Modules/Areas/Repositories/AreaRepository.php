@@ -17,9 +17,9 @@ class AreaRepository
 
     public function getSummaryData()
     {
-        # $states = City::withTrashed()->get(); // Load all records including soft-deleted
+        $areas = Area::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalArea = Area::get()->count();
+        $totalArea = $areas->count();
 
         return [
             'totalArea' => $totalArea,
@@ -39,10 +39,9 @@ class AreaRepository
             $area = Area::create($data);
 
             // Log activity
-//            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? ''
-//            ]);
+            ActivityLogger::log('Area Add', 'Areas', 'Area', $area->id, [
+                'name' => $country->name ?? '',
+            ]);
 
             DB::commit();
 
@@ -59,16 +58,20 @@ class AreaRepository
         }
     }
 
-    public function update(Area $city, array $data): ?Area
+    public function update(Area $area, array $data): ?Area
     {
         try {
             DB::beginTransaction();
 
             // Perform the update
-            $city->update($data);
+            $area->update($data);
+            // Log activity for update
+            ActivityLogger::log('Area Updated', 'Areas', 'Area', $area->id, [
+                'name' => $area->name
+            ]);
 
             DB::commit();
-            return $city;
+            return $area;
         } catch (Exception $e) {
             DB::rollBack();
 
@@ -93,10 +96,9 @@ class AreaRepository
                 return false;
             }
             // Log activity after successful deletion
-//            ActivityLogger::log('Country Deleted', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? '',
-//            ]);
+            ActivityLogger::log('Area Deleted', 'Areas', 'Area', $area->id, [
+                'name' => $area->name ?? '',
+            ]);
             DB::commit();
             return true;
         } catch (Exception $e) {

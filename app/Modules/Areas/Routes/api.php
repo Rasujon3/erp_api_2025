@@ -4,8 +4,7 @@ use App\Modules\Areas\Controllers\AreaController;
 use Illuminate\Support\Facades\Route;
 
 
-//Route::prefix('admin/cities')->middleware('auth:sanctum')->group(function () {
-Route::prefix('admin/areas')->group(function () {
+Route::prefix('admin/areas')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [AreaController::class, 'index']);          // List states
     Route::get('/summary', [AreaController::class, 'getSummary']); // Get states summary
     Route::get('/datatable', [AreaController::class, 'getAreasDataTable']);  // Get DataTable data
