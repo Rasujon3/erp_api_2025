@@ -4,8 +4,7 @@ use App\Modules\Projects\Controllers\ProjectController;
 use Illuminate\Support\Facades\Route;
 
 
-//Route::prefix('admin/cities')->middleware('auth:sanctum')->group(function () {
-Route::prefix('admin/projects')->group(function () {
+Route::prefix('admin/projects')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [ProjectController::class, 'index']);          // List states
     Route::get('/summary', [ProjectController::class, 'getSummary']); // Get states summary
     Route::get('/datatable', [ProjectController::class, 'getSizesDataTable']);  // Get DataTable data
