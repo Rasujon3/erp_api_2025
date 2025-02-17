@@ -19,9 +19,9 @@ class ItemRepository
 
     public function getSummaryData()
     {
-        # $states = Store::withTrashed()->get(); // Load all records including soft-deleted
+        $items = Item::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalItem = Item::get()->count();
+        $totalItem = $items->count();
 
         return [
             'totalItem' => $totalItem,
@@ -41,10 +41,9 @@ class ItemRepository
             $store = Item::create($data);
 
             // Log activity
-//            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? ''
-//            ]);
+            ActivityLogger::log('Item Add', 'Items', 'Item', $store->id, [
+                'name' => $store->title ?? '',
+            ]);
 
             DB::commit();
 
@@ -68,6 +67,10 @@ class ItemRepository
 
             // Perform the update
             $item->update($data);
+            // Log activity for update
+            ActivityLogger::log('Item Updated', 'Items', 'Item', $item->id, [
+                'name' => $item->title ?? '',
+            ]);
 
             DB::commit();
             return $item;
@@ -95,10 +98,9 @@ class ItemRepository
                 return false;
             }
             // Log activity after successful deletion
-//            ActivityLogger::log('Country Deleted', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? '',
-//            ]);
+            ActivityLogger::log('Item Deleted', 'Items', 'Item', $item->id, [
+                'name' => $item->title ?? '',
+            ]);
             DB::commit();
             return true;
         } catch (Exception $e) {

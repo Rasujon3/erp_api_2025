@@ -19,9 +19,9 @@ class ItemGroupRepository
 
     public function getSummaryData()
     {
-        # $states = Store::withTrashed()->get(); // Load all records including soft-deleted
+        $itemGroups = ItemGroup::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalItemGroup = ItemGroup::get()->count();
+        $totalItemGroup = $itemGroups->count();
 
         return [
             'totalItemGroup' => $totalItemGroup,
@@ -41,10 +41,9 @@ class ItemGroupRepository
             $store = ItemGroup::create($data);
 
             // Log activity
-//            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? ''
-//            ]);
+            ActivityLogger::log('ItemGroup Add', 'ItemGroups', 'ItemGroup', $store->id, [
+                'name' => $store->name ?? '',
+            ]);
 
             DB::commit();
 
@@ -68,6 +67,10 @@ class ItemGroupRepository
 
             // Perform the update
             $itemGroup->update($data);
+            // Log activity for update
+            ActivityLogger::log('ItemGroup Updated', 'ItemGroups', 'ItemGroup', $itemGroup->id, [
+                'name' => $itemGroup->name
+            ]);
 
             DB::commit();
             return $itemGroup;
@@ -98,10 +101,9 @@ class ItemGroupRepository
                 return false;
             }
             // Log activity after successful deletion
-//            ActivityLogger::log('Country Deleted', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? '',
-//            ]);
+            ActivityLogger::log('ItemGroup Deleted', 'ItemGroups', 'ItemGroup', $itemGroup->id, [
+                'name' => $country->name ?? '',
+            ]);
             DB::commit();
             return true;
         } catch (Exception $e) {
