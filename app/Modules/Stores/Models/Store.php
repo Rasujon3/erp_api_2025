@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Store extends Model
 {
     use HasFactory, SoftDeletes;
-//    use HasFactory;
 
     protected $table = 'stores';
 

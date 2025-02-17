@@ -17,9 +17,9 @@ class StoreRepository
 
     public function getSummaryData()
     {
-        # $states = Store::withTrashed()->get(); // Load all records including soft-deleted
+        $stores = Store::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalStore = Store::get()->count();
+        $totalStore = $stores->count();
 
         return [
             'totalStore' => $totalStore,
@@ -39,10 +39,9 @@ class StoreRepository
             $store = Store::create($data);
 
             // Log activity
-//            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? ''
-//            ]);
+            ActivityLogger::log('Store Add', 'Stores', 'Store', $store->id, [
+                'name' => $store->name ?? '',
+            ]);
 
             DB::commit();
 
@@ -66,6 +65,10 @@ class StoreRepository
 
             // Perform the update
             $store->update($data);
+            // Log activity for update
+            ActivityLogger::log('Store Updated', 'Stores', 'Store', $store->id, [
+                'name' => $store->name
+            ]);
 
             DB::commit();
             return $store;
@@ -93,10 +96,9 @@ class StoreRepository
                 return false;
             }
             // Log activity after successful deletion
-//            ActivityLogger::log('Country Deleted', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? '',
-//            ]);
+            ActivityLogger::log('Store Deleted', 'Stores', 'Store', $store->id, [
+                'name' => $store->name ?? '',
+            ]);
             DB::commit();
             return true;
         } catch (Exception $e) {

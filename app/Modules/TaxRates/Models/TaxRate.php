@@ -13,8 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TaxRate extends Model
 {
-//    use HasFactory, SoftDeletes;
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'tax_rates';
 

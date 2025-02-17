@@ -4,8 +4,7 @@ use App\Modules\TaxRates\Controllers\TaxRateController;
 use Illuminate\Support\Facades\Route;
 
 
-//Route::prefix('admin/cities')->middleware('auth:sanctum')->group(function () {
-Route::prefix('admin/taxRates')->group(function () {
+Route::prefix('admin/taxRates')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [TaxRateController::class, 'index']);          // List states
     Route::get('/summary', [TaxRateController::class, 'getSummary']); // Get states summary
     Route::get('/datatable', [TaxRateController::class, 'getTaxRatesDataTable']);  // Get DataTable data

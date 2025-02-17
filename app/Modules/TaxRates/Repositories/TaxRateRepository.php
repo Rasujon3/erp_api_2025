@@ -18,9 +18,9 @@ class TaxRateRepository
 
     public function getSummaryData()
     {
-        # $states = Store::withTrashed()->get(); // Load all records including soft-deleted
+        $taxRates = TaxRate::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalTaxRate = TaxRate::get()->count();
+        $totalTaxRate = $taxRates->count();
 
         return [
             'totalTaxRate' => $totalTaxRate,
@@ -40,10 +40,9 @@ class TaxRateRepository
             $store = TaxRate::create($data);
 
             // Log activity
-//            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? ''
-//            ]);
+            ActivityLogger::log('TaxRate Add', 'TaxRates', 'TaxRate', $store->id, [
+                'name' => $store->name ?? '',
+            ]);
 
             DB::commit();
 
@@ -67,6 +66,10 @@ class TaxRateRepository
 
             // Perform the update
             $taxRate->update($data);
+            // Log activity for update
+            ActivityLogger::log('TaxRate Updated', 'TaxRates', 'TaxRate', $taxRate->id, [
+                'name' => $taxRate->name
+            ]);
 
             DB::commit();
             return $taxRate;
@@ -97,10 +100,9 @@ class TaxRateRepository
                 return false;
             }
             // Log activity after successful deletion
-//            ActivityLogger::log('Country Deleted', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? '',
-//            ]);
+            ActivityLogger::log('TaxRate Deleted', 'TaxRates', 'TaxRate', $taxRate->id, [
+                'name' => $country->name ?? '',
+            ]);
             DB::commit();
             return true;
         } catch (Exception $e) {
