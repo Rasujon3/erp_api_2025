@@ -26,7 +26,7 @@ class StateRequest extends FormRequest
      */
     public function rules()
     {
-        $stateId = $this->route('state') ? $this->route('state')->id : null;
+        $stateId = $this->route('state') ?: null;
         return State::rules($stateId);
     }
 }

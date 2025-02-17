@@ -6,7 +6,6 @@ use App\Modules\States\Controllers\StateController;
 
 
 Route::prefix('admin/states')->middleware('auth:sanctum')->group(function () {
-//Route::prefix('admin/states')->group(function () {
     Route::get('/', [StateController::class, 'index']);          // List states
     Route::post('/', [StateController::class, 'store']);           // Create states
     Route::get('/datatable', [StateController::class, 'getStatesDataTable']);  // Get DataTable data

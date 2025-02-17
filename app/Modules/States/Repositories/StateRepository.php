@@ -15,9 +15,9 @@ class StateRepository
 
     public function getSummaryData()
     {
-        # $states = State::withTrashed()->get(); // Load all records including soft-deleted
+        $states = State::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalState = State::get()->count();
+        $totalState = $states->count();
 
         return [
             'totalState' => $totalState,
@@ -37,10 +37,10 @@ class StateRepository
             $state = State::create($data);
 
             // Log activity
-//            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? ''
-//            ]);
+            ActivityLogger::log('State Add', 'States', 'State', $state->id, [
+                'name' => $country->name ?? '',
+                'country_id' => $country->country_id ?? ''
+            ]);
 
             DB::commit();
 
@@ -64,6 +64,10 @@ class StateRepository
 
             // Perform the update
             $state->update($data);
+            // Log activity for update
+            ActivityLogger::log('State Updated', 'States', 'State', $state->id, [
+                'name' => $state->name
+            ]);
 
             DB::commit();
             return $state;
@@ -78,56 +82,6 @@ class StateRepository
             return null;
         }
     }
-
-    public function updateFromDataTable(array $data)
-    {
-        try {
-            DB::beginTransaction();
-
-            // Find country
-            $country = Country::find($data['id'] ?? null);
-            if (!$country) {
-                return ['success' => false, 'message' => 'Country not found'];
-            }
-
-            // Ensure required fields exist
-            $updatedData = [];
-            if (!empty($data['code'])) {
-                $updatedData['code'] = $data['code'];
-            }
-            if (!empty($data['name'])) {
-                $updatedData['name'] = $data['name'];
-            }
-
-            // Prevent updating with empty values
-            if (empty($updatedData)) {
-                return ['success' => false, 'message' => 'No valid data to update'];
-            }
-
-            // Perform the update
-            $country->update($updatedData);
-
-            // Log activity
-            ActivityLogger::log('Country Updated', 'Country', 'Country', $country->id, [
-                'name' => $country->name,
-                'code' => $country->code,
-            ]);
-
-            DB::commit();
-            return ['success' => true, 'message' => 'Country updated successfully', 'data' => $country];
-        } catch (Exception $e) {
-            DB::rollBack();
-
-            // Log the error
-            Log::error('Error updating country from DataTable: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return ['success' => false, 'message' => 'An error occurred while updating the country'];
-        }
-    }
-
-
     public function delete(State $state): bool
     {
         try {
@@ -139,10 +93,10 @@ class StateRepository
                 return false;
             }
             // Log activity after successful deletion
-//            ActivityLogger::log('Country Deleted', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? '',
-//            ]);
+            ActivityLogger::log('State Deleted', 'States', 'State', $state->id, [
+                'name' => $state->name ?? '',
+                'country_id' => $state->country_id ?? '',
+            ]);
             DB::commit();
             return true;
         } catch (Exception $e) {
