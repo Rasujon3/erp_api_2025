@@ -18,9 +18,9 @@ class CurrencyRepository
 
     public function getSummaryData()
     {
-        # $states = City::withTrashed()->get(); // Load all records including soft-deleted
+        $currencies = Currency::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalCurrency = Currency::get()->count();
+        $totalCurrency = $currencies->count();
 
         return [
             'totalCurrency' => $totalCurrency,
@@ -37,17 +37,16 @@ class CurrencyRepository
             DB::beginTransaction();
 
             // Create the Currency record in the database
-            $area = Currency::create($data);
+            $currency = Currency::create($data);
 
             // Log activity
-//            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? ''
-//            ]);
+            ActivityLogger::log('Currency Add', 'Currencies', 'Currency', $currency->id, [
+                'name' => $currency->name ?? '',
+            ]);
 
             DB::commit();
 
-            return $area;
+            return $currency;
         } catch (Exception $e) {
             DB::rollBack();
 
@@ -67,6 +66,10 @@ class CurrencyRepository
 
             // Perform the update
             $currency->update($data);
+            // Log activity for update
+            ActivityLogger::log('Currency Updated', 'Currencies', 'Currency', $currency->id, [
+                'name' => $currency->name
+            ]);
 
             DB::commit();
             return $currency;
@@ -94,10 +97,9 @@ class CurrencyRepository
                 return false;
             }
             // Log activity after successful deletion
-//            ActivityLogger::log('Country Deleted', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? '',
-//            ]);
+            ActivityLogger::log('Currency Deleted', 'Currencies', 'Currency', $currency->id, [
+                'name' => $currency->name ?? '',
+            ]);
             DB::commit();
             return true;
         } catch (Exception $e) {

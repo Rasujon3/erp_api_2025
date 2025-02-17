@@ -33,12 +33,7 @@ class CurrencyRequest extends FormRequest
      */
     public function rules()
     {
-//        $areaId = $this->route('area') ? $this->route('area')->id : null;
-        $currencyId = (int) $this->route('currency') ?: null;
-        $name = $this->input('name');
-        Log::info('Area ID from route:', ['$currencyId' => $currencyId]); // Log the value
-        Log::info('Area ID from name:', ['$currencyId' => $currencyId]); // Log the value
+        $currencyId = $this->route('currency') ?: null;
         return Currency::rules($currencyId);
-//        return Area::rules($name);
     }
 }

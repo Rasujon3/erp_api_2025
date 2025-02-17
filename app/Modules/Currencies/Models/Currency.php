@@ -12,8 +12,7 @@ use Illuminate\Support\Facades\Log;
 
 class Currency extends Model
 {
-//    use HasFactory, SoftDeletes;
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'currencies';
 
@@ -24,7 +23,6 @@ class Currency extends Model
 
     public static function rules($currencyId = null)
     {
-        Log::info('$currencyId ID from model:', ['$currencyId' => $currencyId]);
         return [
             'name' => 'required|unique:currencies,name,' . $currencyId . ',id', // Make sure the name is unique except for the current currency
         ];
