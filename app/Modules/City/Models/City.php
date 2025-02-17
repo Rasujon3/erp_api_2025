@@ -10,8 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class City extends Model
 {
-//    use HasFactory, SoftDeletes;
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'cities';
 

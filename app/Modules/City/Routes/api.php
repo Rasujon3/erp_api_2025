@@ -5,8 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Modules\City\Controllers\CityController;
 
 
-//Route::prefix('admin/cities')->middleware('auth:sanctum')->group(function () {
-Route::prefix('admin/cities')->group(function () {
+Route::prefix('admin/cities')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [CityController::class, 'index']);          // List states
     Route::get('/datatable', [CityController::class, 'getCitiesDataTable']);  // Get DataTable data
     Route::get('/summary', [CityController::class, 'getSummary']); // Get states summary

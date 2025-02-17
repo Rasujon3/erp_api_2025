@@ -16,9 +16,9 @@ class CityRepository
 
     public function getSummaryData()
     {
-        # $states = City::withTrashed()->get(); // Load all records including soft-deleted
+        $cities = City::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalCity = City::get()->count();
+        $totalCity = $cities->count();
 
         return [
             'totalCity' => $totalCity,
@@ -35,17 +35,16 @@ class CityRepository
             DB::beginTransaction();
 
             // Create the City record in the database
-            $state = City::create($data);
+            $city = City::create($data);
 
             // Log activity
-//            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? ''
-//            ]);
+            ActivityLogger::log('City Add', 'Cities', 'City', $city->id, [
+                'name' => $city->name ?? '',
+            ]);
 
             DB::commit();
 
-            return $state;
+            return $city;
         } catch (Exception $e) {
             DB::rollBack();
 
@@ -65,6 +64,10 @@ class CityRepository
 
             // Perform the update
             $city->update($data);
+            // Log activity for update
+            ActivityLogger::log('City Updated', 'Cities', 'City', $city->id, [
+                'name' => $city->name
+            ]);
 
             DB::commit();
             return $city;
@@ -92,10 +95,9 @@ class CityRepository
                 return false;
             }
             // Log activity after successful deletion
-//            ActivityLogger::log('Country Deleted', 'Country', 'Country', $country->id, [
-//                'name' => $country->name ?? '',
-//                'code' => $country->code ?? '',
-//            ]);
+            ActivityLogger::log('City Deleted', 'Cities', 'City', $city->id, [
+                'name' => $city->name ?? '',
+            ]);
             DB::commit();
             return true;
         } catch (Exception $e) {
@@ -103,7 +105,7 @@ class CityRepository
 
             // Log error
             Log::error('Error deleting state: ' . $e->getMessage(), [
-                'state_id' => $city->id,
+                'city_id' => $city->id,
                 'trace' => $e->getTraceAsString()
             ]);
 
