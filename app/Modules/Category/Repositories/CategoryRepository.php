@@ -4,6 +4,7 @@ namespace App\Modules\Category\Repositories;
 
 use App\Helpers\ActivityLogger;
 use App\Modules\Category\Models\Category;
+use App\Modules\SubCategory\Models\SubCategory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -128,7 +129,7 @@ class CategoryRepository
     }
     public function checkExist($id)
     {
-        $exist = Category::where('group_id', $id)->exists();
+        $exist = SubCategory::where('category_id', $id)->exists();
         if ($exist) {
             return true;
         }

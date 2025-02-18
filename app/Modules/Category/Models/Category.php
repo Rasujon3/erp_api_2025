@@ -3,9 +3,11 @@
 namespace App\Modules\Category\Models;
 
 use App\Modules\Departments\Models\Department;
+use App\Modules\SubCategory\Models\SubCategory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Category extends Model
@@ -33,4 +35,9 @@ class Category extends Model
     {
         return $this->belongsTo(Department::class, 'department_id');
     }
+    public function subCategories() : HasMany
+    {
+        return $this->hasMany(SubCategory::class, 'category_id');
+    }
+
 }

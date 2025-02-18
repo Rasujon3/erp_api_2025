@@ -76,6 +76,10 @@ class CategoryController extends AppBaseController
         if (!$data) {
             return $this->sendError('Category not found');
         }
+        $exist = $this->categoryRepository->checkExist($category);
+        if ($exist) {
+            return $this->sendError('Category already used, cannot delete');
+        }
         $this->categoryRepository->delete($data);
         return $this->sendSuccess('Category deleted successfully!');
     }
