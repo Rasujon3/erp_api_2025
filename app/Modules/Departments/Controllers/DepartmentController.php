@@ -90,6 +90,10 @@ class DepartmentController extends AppBaseController
         if (!$data) {
             return $this->sendError('Department not found');
         }
+        $checkExist = $this->departmentRepository->checkExist($department);
+        if ($checkExist) {
+            return $this->sendError('Department is used, cannot delete', 400);
+        }
         $this->departmentRepository->delete($data);
         return $this->sendSuccess('Department deleted successfully!');
     }

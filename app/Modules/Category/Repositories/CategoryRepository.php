@@ -1,19 +1,18 @@
 <?php
 
-namespace App\Modules\Departments\Repositories;
+namespace App\Modules\Category\Repositories;
 
 use App\Helpers\ActivityLogger;
 use App\Modules\Category\Models\Category;
-use App\Modules\Departments\Models\Department;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
-class DepartmentRepository
+class CategoryRepository
 {
     public function getSummaryData()
     {
-        $departments = Department::withTrashed()->get(); // Load all records including soft-deleted
+        $departments = Category::withTrashed()->get(); // Load all records including soft-deleted
 
         $totalDepartments = $departments->count();
 
@@ -23,31 +22,31 @@ class DepartmentRepository
     }
     public function all()
     {
-        return Department::cursor(); // Load all records
+        return Category::cursor(); // Load all records
     }
 
-    public function store(array $data): ?Department
+    public function store(array $data): ?Category
     {
         try {
             DB::beginTransaction();
 
-            // Create the Department record in the database
-            $department = Department::create($data);
+            // Create the Category record in the database
+            $category = Category::create($data);
 
             // Log activity
-            ActivityLogger::log('Department Add', 'Departments', 'Department', $department->id, [
-                'name' => $department->name ?? '',
-                'description' => $department->description ?? ''
+            ActivityLogger::log('Category Add', 'Category', 'Category', $category->id, [
+                'name' => $category->name ?? '',
+                'description' => $category->description ?? ''
             ]);
 
             DB::commit();
 
-            return $department;
+            return $category;
         } catch (Exception $e) {
             DB::rollBack();
 
             // Log the error
-            Log::error('Error in storing Department: ' . $e->getMessage(), [
+            Log::error('Error in storing Category: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -55,25 +54,25 @@ class DepartmentRepository
         }
     }
 
-    public function update(Department $department, array $data): ?Department
+    public function update(Category $category, array $data): ?Category
     {
         try {
             DB::beginTransaction();
 
             // Perform the update
-            $department->update($data);
+            $category->update($data);
             // Log activity for update
-            ActivityLogger::log('Department Updated', 'Departments', 'Department', $department->id, [
-                'name' => $department->name
+            ActivityLogger::log('Category Updated', 'Category', 'Category', $category->id, [
+                'name' => $category->name
             ]);
 
             DB::commit();
-            return $department;
+            return $category;
         } catch (Exception $e) {
             DB::rollBack();
 
             // Log the error
-            Log::error('Error updating Department: ' . $e->getMessage(), [
+            Log::error('Error updating Category: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -85,19 +84,19 @@ class DepartmentRepository
     /**
      * @throws Exception
      */
-    public function delete(Department $department): bool
+    public function delete(Category $category): bool
     {
         try {
             DB::beginTransaction();
             // Perform soft delete
-            $deleted = $department->delete();
+            $deleted = $category->delete();
             if (!$deleted) {
                 DB::rollBack();
                 return false;
             }
             // Log activity after successful deletion
-            ActivityLogger::log('Department Deleted', 'Departments', 'Department', $department->id, [
-                'name' => $department->name ?? '',
+            ActivityLogger::log('Category Deleted', 'Category', 'Category', $category->id, [
+                'name' => $category->name ?? '',
             ]);
             DB::commit();
             return true;
@@ -105,8 +104,8 @@ class DepartmentRepository
             DB::rollBack();
 
             // Log error
-            Log::error('Error deleting Department: ' . $e->getMessage(), [
-                'department_id' => $department->id,
+            Log::error('Error deleting Category: ' . $e->getMessage(), [
+                'category_id' => $category->id,
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -117,16 +116,19 @@ class DepartmentRepository
 
     public function find($id)
     {
-        return Department::find($id);
+        return Category::find($id);
     }
     public function getData($id)
     {
-        $store = Department::where('id', $id)->first();
-        return $store;
+        $category = Category::leftJoin('departments', 'categories.department_id', '=', 'departments.id')
+            ->where('categories.id', $id)
+            ->select(['categories.*', 'departments.name as department_name'])
+            ->first();
+        return $category;
     }
     public function checkExist($id)
     {
-        $exist = Category::where('department_id', $id)->exists();
+        $exist = Category::where('group_id', $id)->exists();
         if ($exist) {
             return true;
         }
