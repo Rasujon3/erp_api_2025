@@ -2,8 +2,10 @@
 
 namespace App\Modules\Leaves\Models;
 
+use App\Modules\LeaveApplications\Models\LeaveApplication;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Leave extends Model
@@ -23,5 +25,10 @@ class Leave extends Model
             'name' => 'required|unique:leaves,name,' . $leaveId . ',id',
             'description' => 'nullable',
         ];
+    }
+
+    public function leaveApplications() : HasMany
+    {
+        return $this->hasMany(LeaveApplication::class, 'leave_id');
     }
 }
