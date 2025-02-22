@@ -1,17 +1,12 @@
 <?php
 
-namespace App\Modules\Admin\Controllers;
+namespace App\Modules\Countries\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Modules\Admin\Models\Country;
+use App\Modules\Countries\Models\Country;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\View;
-use App\Modules\Admin\Repositories\CountryRepository;
-use App\Modules\Admin\Requests\CountryRequest;
-use Laracasts\Flash\Flash;
-use Yajra\DataTables\Facades\DataTables;
-use App\Modules\Admin\Queries\CountryDatatable;
-use App\Helpers\ActivityLogger;
+use App\Modules\Countries\Repositories\CountryRepository;
+use App\Modules\Countries\Requests\CountryRequest;
+use App\Modules\Countries\Queries\CountryDatatable;
 use App\Http\Controllers\AppBaseController;
 
 class CountryController extends AppBaseController
@@ -24,8 +19,7 @@ class CountryController extends AppBaseController
         $this->countryRepository = $countryRepo;
         $this->countryDatatable = $countryDatatable;
     }
-
-    // Fetch all countries
+    // Fetch all data
     public function index()
     {
         $countries = $this->countryRepository->all();
@@ -36,16 +30,12 @@ class CountryController extends AppBaseController
         $summary = $this->countryRepository->getSummaryData();
         return $this->sendResponse($summary, 'Country summary retrieved successfully.');
     }
-
-
     // Get DataTable records
     public function getCountriesDataTable(Request $request)
     {
-
         $data = CountryDatatable::getDataForDatatable($request);
         return $this->sendResponse($data, 'Country DataTable data retrieved successfully.');
     }
-
 
     public function store(CountryRequest $request)
     {
@@ -53,23 +43,35 @@ class CountryController extends AppBaseController
         return $this->sendResponse($country, 'Country created successfully!');
     }
 
-    // Get single country details
-    public function show(Country $country)
+    // Get single details
+    public function show($country)
     {
-        return $this->sendResponse($country, 'Country retrieved successfully.');
+        $data = $this->countryRepository->find($country);
+        if (!$data) {
+            return $this->sendError('Country not found');
+        }
+        return $this->sendResponse($data, 'Country retrieved successfully.');
     }
 
-    // Update country
-    public function update(CountryRequest $request, Country $country)
+    // Update data
+    public function update(CountryRequest $request, $country)
     {
-        $this->countryRepository->update($country, $request->all());
+        $data = $this->countryRepository->find($country);
+        if (!$data) {
+            return $this->sendError('Country not found');
+        }
+        $this->countryRepository->update($data, $request->all());
         return $this->sendResponse($country, 'Country updated successfully!');
     }
 
-    // Delete country
-    public function destroy(Country $country)
+    // Delete data
+    public function destroy($country)
     {
-        $this->countryRepository->delete($country);
+        $data = $this->countryRepository->find($country);
+        if (!$data) {
+            return $this->sendError('Country not found');
+        }
+        $this->countryRepository->delete($data);
         return $this->sendSuccess('Country deleted successfully!');
     }
 }

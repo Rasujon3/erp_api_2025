@@ -157,8 +157,6 @@ class LeaveApplicationRepository
     }
     public function updateFile($file, $data)
     {
-        Log::info('updateFile', ['file' => $file, 'data' => $data]);
-
         // Define the directory path
         $filePath = 'files/images/leaveApplication';
         $directory = public_path($filePath);
@@ -171,14 +169,11 @@ class LeaveApplicationRepository
         // Generate a unique file name
         $fileName = uniqid('leaveApplication_', true) . '.' . $file->getClientOriginalExtension();
 
-        // Log the old file path
-        Log::info('Old hard_copy', ['hard_copy' => $data->hard_copy]);
-
         // Delete the old file if it exists
         if (!empty($data->hard_copy)) {
             $oldFilePath = public_path($data->hard_copy); // Use without prepending $filePath
             if (file_exists($oldFilePath)) {
-                unlink($oldFilePath);
+                unlink($oldFilePath); // Delete the old file
             } else {
                 Log::warning('Old file not found for deletion', ['path' => $oldFilePath]);
             }

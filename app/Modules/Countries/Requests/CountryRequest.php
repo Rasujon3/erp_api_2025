@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Modules\Admin\Requests;
+namespace App\Modules\Countries\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use App\Modules\Admin\Models\Country; // Import the Currency model
+use App\Modules\Countries\Models\Country;
 
 class CountryRequest extends FormRequest
 {
@@ -25,7 +25,7 @@ class CountryRequest extends FormRequest
      */
     public function rules()
     {
-        $countryId = $this->route('country') ? $this->route('country')->id : null;
+        $countryId = $this->route('country') ?: null;
         return Country::rules($countryId);
     }
 }

@@ -1,18 +1,15 @@
 <?php
 
-namespace App\Modules\Admin\Queries;
+namespace App\Modules\Countries\Queries;
 
-use Yajra\DataTables\Facades\DataTables;
-use App\Modules\Admin\Models\Country;
-use Carbon\Carbon;
-use App\Modules\Admin\Repositories\CountryRepository;
+use App\Modules\Countries\Models\Country;
+use App\Modules\Countries\Repositories\CountryRepository;
 
 
 
 class CountryDatatable
 {
     protected $countryRepository;
-    protected $countryDatatable;
 
     public function __construct(CountryRepository $countryRepository)
     {
@@ -22,6 +19,10 @@ class CountryDatatable
 
     public static function getDataForDatatable($request)
     {
+        // Total count without any filters
+        $totalCount = Country::count();
+
+        // Build the query with filters
         $query = Country::select(['id', 'code', 'name', 'is_active', 'draft', 'is_default', 'flag']);
 
         // Global search
@@ -29,7 +30,7 @@ class CountryDatatable
             $searchValue = $request->input('search.value');
             $query->where(function ($q) use ($searchValue) {
                 $q->where('name', 'like', "%{$searchValue}%")
-                ->orWhere('code', 'like', "%{$searchValue}%");
+                    ->orWhere('code', 'like', "%{$searchValue}%");
             });
         }
 
@@ -40,15 +41,26 @@ class CountryDatatable
             }
         }
 
+        // Filtered count
+        $filteredCount = $query->count();
+
         // Sorting
         foreach ($request->input('order', []) as $order) {
             $columnName = $request->input("columns.{$order['column']}.data");
             $query->orderBy($columnName, $order['dir']);
         }
 
-        // Pagination
-        $data = $query->paginate($request->input('length', 10), ['*'], 'start', $request->input('start', 0) / $request->input('length', 10) + 1);
+        // Pagination using offset and limit
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+        $data = $query->offset($start)->limit($length)->get();
 
-        return $data;
+        // Return in DataTables format
+        return [
+            'draw' => $request->input('draw', 1),
+            'recordsTotal' => $totalCount,
+            'recordsFiltered' => $filteredCount,
+            'data' => $data,
+        ];
     }
 }
