@@ -34,7 +34,7 @@ class CountryRepository
     }
     public function all()
     {
-        return Country::cursor();
+        return Country::cursor(); // Load all records without soft-deleted
     }
 
     public function store(array $data): ?Country
@@ -218,6 +218,7 @@ class CountryRepository
     public function getMapData()
     {
         $getMapData = Country::where('deleted_at', null)->select('id', 'name', 'code', 'flag')->get();
+//        $getMapData = Country::where('id', 215)->select('id', 'name', 'code', 'flag')->get();
         return $getMapData;
     }
 }

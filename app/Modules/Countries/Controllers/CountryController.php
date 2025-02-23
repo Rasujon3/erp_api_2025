@@ -2,12 +2,15 @@
 
 namespace App\Modules\Countries\Controllers;
 
-use App\Modules\Countries\Models\Country;
+use Exception;
 use Illuminate\Http\Request;
 use App\Modules\Countries\Repositories\CountryRepository;
 use App\Modules\Countries\Requests\CountryRequest;
 use App\Modules\Countries\Queries\CountryDatatable;
 use App\Http\Controllers\AppBaseController;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\View;
+use Mpdf\Mpdf;
 
 class CountryController extends AppBaseController
 {
@@ -77,5 +80,50 @@ class CountryController extends AppBaseController
         }
         $this->countryRepository->delete($data);
         return $this->sendSuccess('Country deleted successfully!');
+    }
+    /**
+     * Export all countries as PDF.
+     */
+    public function generatePdf()
+    {
+        try {
+            $countries = $this->countryRepository->getMapData();
+
+            $html = View::make('countries::pdf.countries', compact('countries'))->render();
+
+            $mpdf = new Mpdf();
+            $mpdf->WriteHTML($html);
+
+            $pdfFileName = 'all_countries.pdf';
+            return response()->streamDownload(
+                fn() => print($mpdf->Output('', 'I')), // I = Inline, D = Download, S = String, F = File
+                $pdfFileName
+            );
+        } catch (Exception $e) {
+            Log::error('Error exporting countries as PDF: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+    /**
+     * Export a single country as PDF.
+     */
+    public function generateSinglePdf($country)
+    {
+        $data = $this->countryRepository->find($country);
+        if (!$data) {
+            return $this->sendError('Country not found');
+        }
+
+        $html = View::make('countries::pdf.single_country', compact('data'))->render();
+
+        $mpdf = new Mpdf();
+        $mpdf->WriteHTML($html);
+
+        $pdfFileName = 'country_' . $data->code . '.pdf';
+        return response()->streamDownload(
+            fn() => print($mpdf->Output('', 'I')), // I = Inline, D = Download, S = String, F = File
+            $pdfFileName
+        );
     }
 }
