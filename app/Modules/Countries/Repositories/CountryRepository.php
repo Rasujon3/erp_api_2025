@@ -10,8 +10,6 @@ use Exception;
 
 class CountryRepository
 {
-
-
     public function getSummaryData()
     {
         $countries = Country::withTrashed()->get(); // Load all records including soft-deleted
@@ -215,5 +213,11 @@ class CountryRepository
                 return false;
             }
         }
+    }
+
+    public function getMapData()
+    {
+        $getMapData = Country::where('deleted_at', null)->select('id', 'name', 'code', 'flag')->get();
+        return $getMapData;
     }
 }

@@ -36,8 +36,8 @@ class Country extends Model
         return [
             'code' => ['required', 'string', 'max:45', $uniqueCodeRule],
             'name' => 'required|string|max:191',
-            'name_in_bangla' => 'required|string|max:191',
-            'name_in_arabic' => 'required|string|max:191',
+            'name_in_bangla' => 'required|string|max:191|regex:/^[\p{Bengali}\s]+$/u', // regex for Bangla characters
+            'name_in_arabic' => 'required|string|max:191|regex:/^[\p{Arabic}\s]+$/u', // regex for Arabic characters
             'is_default' => 'boolean',
             'draft' => 'boolean',
             'drafted_at' => 'nullable|date',

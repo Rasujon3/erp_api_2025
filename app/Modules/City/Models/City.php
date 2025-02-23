@@ -2,7 +2,7 @@
 
 namespace App\Modules\City\Models;
 
-use App\Modules\Admin\Models\Country;
+use App\Modules\Countries\Models\Country;
 use App\Modules\States\Models\State;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

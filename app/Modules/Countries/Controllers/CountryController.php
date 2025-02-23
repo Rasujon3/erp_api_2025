@@ -36,13 +36,12 @@ class CountryController extends AppBaseController
         $data = CountryDatatable::getDataForDatatable($request);
         return $this->sendResponse($data, 'Country DataTable data retrieved successfully.');
     }
-
-    public function store(CountryRequest $request)
+    // Get Map Data
+    public function getMapData()
     {
-        $country = $this->countryRepository->store($request->all());
-        return $this->sendResponse($country, 'Country created successfully!');
+        $data = $this->countryRepository->getMapData();
+        return $this->sendResponse($data, 'Country map data retrieved successfully.');
     }
-
     // Get single details
     public function show($country)
     {
@@ -51,6 +50,11 @@ class CountryController extends AppBaseController
             return $this->sendError('Country not found');
         }
         return $this->sendResponse($data, 'Country retrieved successfully.');
+    }
+    public function store(CountryRequest $request)
+    {
+        $country = $this->countryRepository->store($request->all());
+        return $this->sendResponse($country, 'Country created successfully!');
     }
 
     // Update data
