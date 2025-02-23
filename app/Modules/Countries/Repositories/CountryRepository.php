@@ -214,11 +214,21 @@ class CountryRepository
             }
         }
     }
-
     public function getMapData()
     {
         $getMapData = Country::where('deleted_at', null)->select('id', 'name', 'code', 'flag')->get();
-//        $getMapData = Country::where('id', 215)->select('id', 'name', 'code', 'flag')->get();
         return $getMapData;
+    }
+    public function getDataForExcel()
+    {
+        $getDataForExcel = Country::where('deleted_at', null)->select('id', 'name', 'code', 'created_at')->get();
+        return $getDataForExcel;
+    }
+    public function getDataForSingleExcel($id)
+    {
+        $getDataForSingleExcel = Country::where('deleted_at', null)
+            ->select('id', 'name', 'code', 'created_at')
+            ->find($id);
+        return $getDataForSingleExcel;
     }
 }

@@ -11,6 +11,9 @@ use App\Http\Controllers\AppBaseController;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use Mpdf\Mpdf;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CountryController extends AppBaseController
 {
@@ -103,6 +106,7 @@ class CountryController extends AppBaseController
             Log::error('Error exporting countries as PDF: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
+            return $this->sendError('Something went wrong!!! [CC-01]');
         }
     }
     /**
@@ -110,20 +114,122 @@ class CountryController extends AppBaseController
      */
     public function generateSinglePdf($country)
     {
-        $data = $this->countryRepository->find($country);
-        if (!$data) {
-            return $this->sendError('Country not found');
+        try {
+            $data = $this->countryRepository->find($country);
+            if (!$data) {
+                return $this->sendError('Country not found');
+            }
+
+            $html = View::make('countries::pdf.single_country', compact('data'))->render();
+
+            $mpdf = new Mpdf();
+            $mpdf->WriteHTML($html);
+
+            $pdfFileName = 'country_' . $data->code . '.pdf';
+            return response()->streamDownload(
+                fn() => print($mpdf->Output('', 'I')), // I = Inline, D = Download, S = String, F = File
+                $pdfFileName
+            );
+        } catch (Exception $e) {
+            Log::error('Error exporting countries as Single PDF: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('Something went wrong!!! [CC-02]');
         }
+    }
+    /**
+     * Export all countries as an Excel file.
+     */
+    public function generateExcel()
+    {
+        try {
+            // Fetch all countries
+            $countries = $this->countryRepository->getDataForExcel();
 
-        $html = View::make('countries::pdf.single_country', compact('data'))->render();
+            // Prepare Excel data
+            $data = [];
+            $data[] = ['SL', 'Name', 'Code', 'Created At']; // Header row
 
-        $mpdf = new Mpdf();
-        $mpdf->WriteHTML($html);
+            foreach ($countries as $index => $country) {
+                $data[] = [
+                    $index + 1,
+                    $country->name,
+                    $country->code,
+                    $country->created_at
+                ];
+            }
 
-        $pdfFileName = 'country_' . $data->code . '.pdf';
-        return response()->streamDownload(
-            fn() => print($mpdf->Output('', 'I')), // I = Inline, D = Download, S = String, F = File
-            $pdfFileName
-        );
+            // Generate and return Excel file
+            return $this->generateExcelFile($data, 'countries_export');
+        } catch (Exception $e) {
+            Log::error('Error exporting countries as Excel: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('Something went wrong!!! [CC-03]');
+        }
+    }
+
+    /**
+     * Export a single country as an Excel file.
+     */
+    public function generateSingleExcel($id)
+    {
+        try {
+            // Fetch country by ID
+            $country = $this->countryRepository->getDataForSingleExcel($id);
+
+            if (!$country) {
+                return $this->sendError('Country not found');
+            }
+
+            // Prepare Excel data
+            $data = [
+                ['SL', 'Name', 'Code', 'Created At'], // Header row
+                [1, $country->name, $country->code, $country->created_at]
+            ];
+
+            // Generate and return Excel file
+            return $this->generateExcelFile($data, 'country_' . $id);
+        } catch (Exception $e) {
+            Log::error('Error exporting countries as Single Excel: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('Something went wrong!!! [CC-04]');
+        }
+    }
+
+    /**
+     * Generate an Excel file and return it as a response.
+     */
+    private function generateExcelFile($data, $filename)
+    {
+        try {
+            // Create a new Spreadsheet
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Populate the sheet with data
+            foreach ($data as $rowIndex => $row) {
+                foreach ($row as $colIndex => $cellValue) {
+                    $sheet->setCellValueByColumnAndRow($colIndex + 1, $rowIndex + 1, $cellValue);
+                }
+            }
+
+            // Prepare response
+            return new StreamedResponse(function () use ($spreadsheet) {
+                $writer = new Xlsx($spreadsheet);
+                $writer->save('php://output');
+            }, 200, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '.xlsx"',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error exporting countries as Generate Excel: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('Something went wrong!!! [CC-04]');
+        }
     }
 }
