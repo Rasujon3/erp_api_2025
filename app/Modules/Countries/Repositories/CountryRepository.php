@@ -34,7 +34,26 @@ class CountryRepository
     }
     public function all()
     {
-        return Country::cursor(); // Load all records without soft-deleted
+        $list = Country::cursor(); // Load all records without soft-deleted
+        $countries = Country::withTrashed()->get(); // Load all records including soft-deleted
+
+        $totalDraft = $countries->where('draft', true)->count();
+        $totalInactive = $countries->where('is_active', false)->count();
+        $totalActive = $countries->where('is_active', true)->count();
+        $totalDeleted = $countries->whereNotNull('deleted_at')->count();
+        $totalUpdated = $countries->whereNotNull('updated_at')->count();
+
+        // Ensure totalCountries is the sum of totalDraft + totalInactive + totalActive
+        $totalCountries = $totalDraft + $totalInactive + $totalActive + $totalDeleted;
+        return [
+            'list' => $list,
+            'totalCountries' => $totalCountries,
+            'totalDraft' => $totalDraft,
+            'totalInactive' => $totalInactive,
+            'totalActive' => $totalActive,
+            'totalUpdated' => $totalUpdated,
+            'totalDeleted' => $totalDeleted,
+        ];
     }
 
     public function store(array $data): ?Country
