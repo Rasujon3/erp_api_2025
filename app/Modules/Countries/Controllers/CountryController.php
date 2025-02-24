@@ -2,6 +2,7 @@
 
 namespace App\Modules\Countries\Controllers;
 
+use App\Modules\Countries\Requests\CountryBulkRequest;
 use Exception;
 use Illuminate\Http\Request;
 use App\Modules\Countries\Repositories\CountryRepository;
@@ -231,5 +232,11 @@ class CountryController extends AppBaseController
             ]);
             return $this->sendError('Something went wrong!!! [CC-04]');
         }
+    }
+    // bulk update
+    public function bulkUpdate(CountryBulkRequest $request)
+    {
+        $this->countryRepository->bulkUpdate($request);
+        return $this->sendResponse([],'Country Bulk updated successfully!');
     }
 }

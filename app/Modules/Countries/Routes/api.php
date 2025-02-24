@@ -16,6 +16,7 @@ Route::prefix('countries')->middleware('auth:sanctum')->group(function () {
     Route::get('/generateSingleExcel/{country}', [CountryController::class, 'generateSingleExcel']);    // create Excel with specific data
     Route::get('/view/{country}', [CountryController::class, 'show']);    // View data
     Route::post('/create', [CountryController::class, 'store']);           // Create data
+    Route::put('/bulk-update', [CountryController::class, 'bulkUpdate']); // Bulk update
     Route::put('/update/{country}', [CountryController::class, 'update']);  // Update data
     Route::delete('/{country}', [CountryController::class, 'destroy']); // Delete data
 });

@@ -45,4 +45,41 @@ class Country extends Model
             'flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
     }
+    public static function bulkRules()
+    {
+        return [
+            'countries' => 'required|array|min:1',
+            'countries.*.id' => 'required|exists:countries,id',
+            'countries.*.code' => [
+                'required',
+                'string',
+                'max:45',
+                function ($attribute, $value, $fail) {
+                    $countryId = request()->input(str_replace('.code', '.id', $attribute));
+                    $exists = Country::where('code', $value)
+                        ->whereNull('deleted_at')
+                        ->where('id', '!=', $countryId)
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('The country code "' . $value . '" has already been taken.');
+                    }
+
+                    $find = Country::find($countryId);
+
+                    if (!$find) {
+                        $fail('The "' . $value . '" country not found.');
+                    }
+                },
+            ],
+            'countries.*.name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+            'countries.*.name_in_bangla' => 'required|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
+            'countries.*.name_in_arabic' => 'required|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
+            'countries.*.is_default' => 'boolean',
+            'countries.*.draft' => 'boolean',
+            'countries.*.drafted_at' => 'nullable|date',
+            'countries.*.is_active' => 'boolean',
+            'countries.*.flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ];
+    }
 }

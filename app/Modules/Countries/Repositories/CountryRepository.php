@@ -250,4 +250,53 @@ class CountryRepository
             ->find($id);
         return $getDataForSingleExcel;
     }
+    public function bulkUpdate($request): ?Country
+    {
+        DB::beginTransaction();
+        try {
+            foreach ($request->countries as $data) {
+                $country = Country::find($data['id']);
+
+                if (!$country) {
+                    continue; // Skip if country is not found
+                }
+
+                // Update country details
+                $country->update([
+                    'code' => $data['code'],
+                    'name' => $data['name'],
+                    'name_in_bangla' => $data['name_in_bangla'],
+                    'name_in_arabic' => $data['name_in_arabic'],
+                    'is_default' => $data['is_default'] ?? 0,
+                    'draft' => $data['draft'] ?? 0,
+                    'drafted_at' => $data['draft'] == 1 ? now() : null,
+                    'is_active' => $data['is_active'] ?? 0,
+                ]);
+
+                // Handle flag image upload if provided
+                /*
+                if (isset($data['flag']) && $request->hasFile("countries.{$data['id']}.flag")) {
+                    $flagPath = $request->file("countries.{$data['id']}.flag")->store('flags', 'public');
+                    $country->update(['flag' => $flagPath]);
+                }
+                */
+                // Log activity for update
+                ActivityLogger::log('Country Updated', 'Country', 'Country', $country->id, [
+                    'name' => $country->name
+                ]);
+            }
+
+            DB::commit();
+            return $country;
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            // Log the error
+            Log::error('Error updating country: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return null;
+        }
+    }
 }
