@@ -4,6 +4,7 @@ namespace App\Modules\Countries\Repositories;
 
 use App\Modules\Countries\Models\Country;
 use App\Helpers\ActivityLogger;
+use App\Modules\States\Models\State;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -298,5 +299,13 @@ class CountryRepository
 
             return null;
         }
+    }
+    public function checkExist($id)
+    {
+        $exist = State::where('country_id', $id)->whereNull('deleted_at')->exists();
+        if ($exist) {
+            return true;
+        }
+        return false;
     }
 }

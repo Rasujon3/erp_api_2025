@@ -2,6 +2,7 @@
 
 namespace App\Modules\Countries\Models;
 
+use App\Modules\States\Models\State;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -49,7 +50,10 @@ class Country extends Model
     {
         return [
             'countries' => 'required|array|min:1',
-            'countries.*.id' => 'required|exists:countries,id',
+            'countries.*.id' => [
+                'required',
+                Rule::exists('countries', 'id')->whereNull('deleted_at')
+            ],
             'countries.*.code' => [
                 'required',
                 'string',
@@ -81,5 +85,10 @@ class Country extends Model
             'countries.*.is_active' => 'boolean',
             'countries.*.flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
+    }
+    // hasMany
+    public function states()
+    {
+        return $this->hasMany(State::class, 'country_id');
     }
 }

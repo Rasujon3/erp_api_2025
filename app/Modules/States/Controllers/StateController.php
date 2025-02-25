@@ -2,13 +2,11 @@
 
 namespace App\Modules\States\Controllers;
 
-use App\Modules\Admin\Models\Country;
-use App\Modules\States\Models\State;
+use App\Http\Controllers\AppBaseController;
 use App\Modules\States\Queries\StateDatatable;
 use App\Modules\States\Repositories\StateRepository;
+use App\Modules\States\Requests\StateBulkRequest;
 use App\Modules\States\Requests\StateRequest;
-use Illuminate\Http\Request;
-use App\Http\Controllers\AppBaseController;
 
 class StateController extends AppBaseController
 {
@@ -21,70 +19,51 @@ class StateController extends AppBaseController
         $this->stateDatatable = $stateDatatable;
     }
 
-    // Fetch all states
+    // Fetch all data
     public function index()
     {
         $statues = $this->stateRepository->all();
         return $this->sendResponse($statues, 'States retrieved successfully.');
     }
-    public function getSummary()
-    {
-        $summary = $this->stateRepository->getSummaryData();
-        return $this->sendResponse($summary, 'State summary retrieved successfully.');
-    }
 
-
-    // Get DataTable records
-    public function getStatesDataTable(Request $request)
-    {
-        $data = StateDatatable::getDataForDatatable($request);
-        return $this->sendResponse($data, 'State DataTable data retrieved successfully.');
-    }
-
-
+    // Store data
     public function store(StateRequest $request)
     {
         $state = $this->stateRepository->store($request->all());
+        if (!$state) {
+            return $this->sendError('Something went wrong!!! [SCS-01]', 500);
+        }
         return $this->sendResponse($state, 'State created successfully!');
     }
 
-    // Get single country details
-//    public function show(State $state)
+    // Get single details data
     public function show($state)
     {
         $data = $this->stateRepository->find($state);
-        // check if state exists
         if (!$data) {
             return $this->sendError('State not found');
         }
         $summary = $this->stateRepository->getData($state);
         return $this->sendResponse($summary, 'State retrieved successfully.');
-//        return $this->sendResponse($state, 'State retrieved successfully.');
     }
-
-    // Update country
+    // Update data
     public function update(StateRequest $request, $state)
-//    public function update(Request $request, Country $country)
     {
         $data = $this->stateRepository->find($state);
-        // check if state exists
         if (!$data) {
             return $this->sendError('State not found');
         }
+        // ToDo Check if state exists on cities table
         $this->stateRepository->update($data, $request->all());
         return $this->sendResponse($state, 'State updated successfully!');
     }
-
-    // Delete country
-//    public function destroy(State $state)
-    public function destroy($state)
+    // bulk update
+    public function bulkUpdate(StateBulkRequest $request)
     {
-        $data = $this->stateRepository->find($state);
-        // check if state exists
-        if (!$data) {
-            return $this->sendError('State not found');
+        $bulkUpdate = $this->stateRepository->bulkUpdate($request);
+        if (!$bulkUpdate) {
+            return $this->sendError('Something went wrong!!! [SCBU-05]', 500);
         }
-        $this->stateRepository->delete($data);
-        return $this->sendSuccess('State deleted successfully!');
+        return $this->sendResponse([],'State Bulk updated successfully!');
     }
 }

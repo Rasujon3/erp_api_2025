@@ -11,35 +11,45 @@ use Exception;
 
 class StateRepository
 {
-
-
-    public function getSummaryData()
-    {
-        $states = State::withTrashed()->get(); // Load all records including soft-deleted
-
-        $totalState = $states->count();
-
-        return [
-            'totalState' => $totalState,
-        ];
-    }
     public function all()
     {
-        return State::cursor(); // Load all records
-    }
+        $list = State::cursor(); // Load all records without soft-deleted
+        $countries = State::withTrashed()->get(); // Load all records including soft-deleted
 
+        $totalDraft = $countries->where('draft', true)->count();
+        $totalInactive = $countries->where('is_active', false)->count();
+        $totalActive = $countries->where('is_active', true)->count();
+        $totalDeleted = $countries->whereNotNull('deleted_at')->count();
+        $totalUpdated = $countries->whereNotNull('updated_at')->count();
+
+        // Ensure totalCountries is the sum of totalDraft + totalInactive + totalActive
+        $totalStates = $totalDraft + $totalInactive + $totalActive + $totalDeleted;
+        return [
+            'totalStates' => $totalStates,
+            'totalDraft' => $totalDraft,
+            'totalInactive' => $totalInactive,
+            'totalActive' => $totalActive,
+            'totalUpdated' => $totalUpdated,
+            'totalDeleted' => $totalDeleted,
+            'list' => $list,
+        ];
+    }
     public function store(array $data): ?State
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
+            // Set drafted_at timestamp if it's a draft
+            if ($data['draft'] == 1) {
+                $data['drafted_at'] = now();
+            }
 
             // Create the State record in the database
             $state = State::create($data);
 
             // Log activity
             ActivityLogger::log('State Add', 'States', 'State', $state->id, [
-                'name' => $country->name ?? '',
-                'country_id' => $country->country_id ?? ''
+                'name' => $state->name ?? '',
+                'country_id' => $state->country_id ?? ''
             ]);
 
             DB::commit();
@@ -59,15 +69,25 @@ class StateRepository
 
     public function update(State $state, array $data): ?State
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
+            // Set drafted_at timestamp if it's a draft
+            if ($data['draft'] == 1) {
+                $data['drafted_at'] = now();
+            }
 
             // Perform the update
             $state->update($data);
-            // Log activity for update
-            ActivityLogger::log('State Updated', 'States', 'State', $state->id, [
-                'name' => $state->name
-            ]);
+            // Soft delete the record if 'is_delete' is 1
+            if (!empty($data['is_delete']) && $data['is_delete'] == 1) {
+                $this->delete($state);
+            } else {
+                // Log activity for update
+                ActivityLogger::log('State Updated', 'States', 'State', $state->id, [
+                    'name' => $state->name ?? '',
+                    'country_id' => $state->country_id ?? ''
+                ]);
+            }
 
             DB::commit();
             return $state;
@@ -84,8 +104,8 @@ class StateRepository
     }
     public function delete(State $state): bool
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
             // Perform soft delete
             $deleted = $state->delete();
             if (!$deleted) {
@@ -111,8 +131,6 @@ class StateRepository
             return false;
         }
     }
-
-
     public function find($id)
     {
         return State::find($id);
@@ -121,8 +139,51 @@ class StateRepository
     {
         $state = State::leftJoin('countries', 'states.country_id', '=', 'countries.id')
             ->where('states.id', $id)
-            ->select('states.name as state_name', 'states.description as state_description', 'countries.name as country_name')
+            ->select('states.*', 'countries.name as country_name')
             ->first();
         return $state;
+    }
+    public function bulkUpdate($request)
+    {
+        DB::beginTransaction();
+        try {
+            foreach ($request->states as $data) {
+                $state = State::find($data['id']);
+
+                if (!$state) {
+                    continue; // Skip if state not found
+                }
+
+                // Update state details
+                $state->update([
+                    'name' => $data['name'],
+                    'name_in_bangla' => $data['name_in_bangla'],
+                    'name_in_arabic' => $data['name_in_arabic'],
+                    'is_default' => $data['is_default'] ?? 0,
+                    'draft' => $data['draft'] ?? 0,
+                    'drafted_at' => $data['draft'] == 1 ? now() : null,
+                    'is_active' => $data['is_active'] ?? 0,
+                    'country_id' => $data['country_id'],
+                    'description' => $data['description'],
+                ]);
+                // Log activity for update
+                ActivityLogger::log('State Updated', 'State', 'State', $state->id, [
+                    'name' => $state->name ?? '',
+                    'country_id' => $state->country_id ?? ''
+                ]);
+            }
+
+            DB::commit();
+            return true;
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            // Log the error
+            Log::error('Error updating country: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return null;
+        }
     }
 }
