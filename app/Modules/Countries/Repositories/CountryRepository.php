@@ -88,7 +88,10 @@ class CountryRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error in storing country: ' . $e->getMessage(), [
+            Log::error('Error in storing country: ' , [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -130,7 +133,10 @@ class CountryRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error updating country: ' . $e->getMessage(), [
+            Log::error('Error updating country: ' , [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -164,8 +170,11 @@ class CountryRepository
             DB::rollBack();
 
             // Log error
-            Log::error('Error deleting country: ' . $e->getMessage(), [
+            Log::error('Error deleting country: ' , [
                 'country_id' => $country->id,
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -264,14 +273,14 @@ class CountryRepository
 
                 // Update country details
                 $country->update([
-                    'code' => $data['code'],
-                    'name' => $data['name'],
-                    'name_in_bangla' => $data['name_in_bangla'],
-                    'name_in_arabic' => $data['name_in_arabic'],
-                    'is_default' => $data['is_default'] ?? 0,
-                    'draft' => $data['draft'] ?? 0,
-                    'drafted_at' => $data['draft'] == 1 ? now() : null,
-                    'is_active' => $data['is_active'] ?? 0,
+                    'code' => $data['code'] ?? $country->code,
+                    'name' => $data['name'] ?? $country->name,
+                    'name_in_bangla' => $data['name_in_bangla'] ?? $country->name_in_bangla,
+                    'name_in_arabic' => $data['name_in_arabic'] ?? $country->name_in_arabic,
+                    'is_default' => $data['is_default'] ?? $country->is_default,
+                    'draft' => $data['draft'] ?? $country->draft,
+                    'drafted_at' => $data['draft'] == 1 ? now() : $country->drafted_at,
+                    'is_active' => $data['is_active'] ?? $country->is_active,
                 ]);
 
                 // Handle flag image upload if provided
@@ -293,7 +302,10 @@ class CountryRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error updating country: ' . $e->getMessage(), [
+            Log::error('Error bulk updating country: ', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 

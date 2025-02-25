@@ -60,7 +60,10 @@ class StateRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error in storing State: ' . $e->getMessage(), [
+            Log::error('Error in storing State: ' , [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -96,7 +99,10 @@ class StateRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error updating state: ' . $e->getMessage(), [
+            Log::error('Error updating state: ' , [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -124,8 +130,11 @@ class StateRepository
             DB::rollBack();
 
             // Log error
-            Log::error('Error deleting state: ' . $e->getMessage(), [
+            Log::error('Error deleting state: ' , [
                 'state_id' => $state->id,
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -157,15 +166,15 @@ class StateRepository
 
                 // Update state details
                 $state->update([
-                    'name' => $data['name'],
-                    'name_in_bangla' => $data['name_in_bangla'],
-                    'name_in_arabic' => $data['name_in_arabic'],
-                    'is_default' => $data['is_default'] ?? 0,
-                    'draft' => $data['draft'] ?? 0,
-                    'drafted_at' => $data['draft'] == 1 ? now() : null,
-                    'is_active' => $data['is_active'] ?? 0,
-                    'country_id' => $data['country_id'],
-                    'description' => $data['description'],
+                    'name' => $data['name'] ?? $state->name,
+                    'name_in_bangla' => $data['name_in_bangla'] ?? $state->name_in_bangla,
+                    'name_in_arabic' => $data['name_in_arabic'] ?? $state->name_in_arabic,
+                    'is_default' => $data['is_default'] ?? $state->is_default,
+                    'draft' => $data['draft'] ?? $state->draft,
+                    'drafted_at' => $data['draft'] == 1 ? now() : $state->drafted_at,
+                    'is_active' => $data['is_active'] ?? $state->is_active,
+                    'country_id' => $data['country_id'] ?? $state->country_id,
+                    'description' => $data['description'] ?? $state->description,
                 ]);
                 // Log activity for update
                 ActivityLogger::log('State Updated', 'State', 'State', $state->id, [
@@ -180,7 +189,10 @@ class StateRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error updating country: ' . $e->getMessage(), [
+            Log::error('Error bulk updating State: ', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 

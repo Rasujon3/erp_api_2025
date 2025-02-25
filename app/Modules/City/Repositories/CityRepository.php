@@ -60,7 +60,10 @@ class CityRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error in storing City: ' . $e->getMessage(), [
+            Log::error('Error in storing City: ' , [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -97,7 +100,10 @@ class CityRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error updating City: ' . $e->getMessage(), [
+            Log::error('Error updating City: ' , [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -126,8 +132,11 @@ class CityRepository
             DB::rollBack();
 
             // Log error
-            Log::error('Error deleting City: ' . $e->getMessage(), [
+            Log::error('Error deleting City: ' , [
                 'state_id' => $city->id,
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -160,16 +169,16 @@ class CityRepository
 
                 // Update state details
                 $city->update([
-                    'name' => $data['name'],
-                    'name_in_bangla' => $data['name_in_bangla'],
-                    'name_in_arabic' => $data['name_in_arabic'],
-                    'is_default' => $data['is_default'] ?? 0,
-                    'draft' => $data['draft'] ?? 0,
-                    'drafted_at' => $data['draft'] == 1 ? now() : null,
-                    'is_active' => $data['is_active'] ?? 0,
-                    'country_id' => $data['country_id'],
-                    'state_id' => $data['state_id'],
-                    'description' => $data['description'],
+                    'name' => $data['name'] ?? $city->name,
+                    'name_in_bangla' => $data['name_in_bangla'] ?? $city->name_in_bangla,
+                    'name_in_arabic' => $data['name_in_arabic'] ?? $city->name_in_arabic,
+                    'is_default' => $data['is_default'] ?? $city->is_default,
+                    'draft' => $data['draft'] ?? $city->draft,
+                    'drafted_at' => $data['draft'] == 1 ? now() : $city->drafted_at,
+                    'is_active' => $data['is_active'] ?? $city->is_active,
+                    'country_id' => $data['country_id'] ?? $city->country_id,
+                    'state_id' => $data['state_id'] ?? $city->state_id,
+                    'description' => $data['description'] ?? $city->description,
                 ]);
                 // Log activity for update
                 ActivityLogger::log('City Updated', 'City', 'City', $city->id, [
@@ -184,7 +193,10 @@ class CityRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error updating City: ' . $e->getMessage(), [
+            Log::error('Error Bulk updating City: ', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 

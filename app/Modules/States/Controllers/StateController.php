@@ -59,7 +59,10 @@ class StateController extends AppBaseController
                 return $this->sendError('State already used, cannot be deleted', 400);
             }
         }
-        $this->stateRepository->update($data, $request->all());
+        $updated = $this->stateRepository->update($data, $request->all());
+        if (!$updated) {
+            return $this->sendError('Something went wrong!!! [SCU-01]', 500);
+        }
         return $this->sendResponse($state, 'State updated successfully!');
     }
     // bulk update
