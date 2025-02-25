@@ -35,9 +35,9 @@ class Country extends Model
         }
         return [
             'code' => ['required', 'string', 'max:45', $uniqueCodeRule],
-            'name' => 'required|string|max:191||regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
-            'name_in_bangla' => 'required|string|max:191|regex:/^[\p{Bengali}\s]+$/u', // regex for Bangla characters with spaces
-            'name_in_arabic' => 'required|string|max:191|regex:/^[\p{Arabic}\s]+$/u', // regex for Arabic characters with spaces
+            'name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
+            'name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u', // regex for Bangla characters with spaces
+            'name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u', // regex for Arabic characters with spaces
             'is_default' => 'boolean',
             'draft' => 'boolean',
             'drafted_at' => 'nullable|date',
@@ -73,8 +73,8 @@ class Country extends Model
                 },
             ],
             'countries.*.name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
-            'countries.*.name_in_bangla' => 'required|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
-            'countries.*.name_in_arabic' => 'required|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
+            'countries.*.name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
+            'countries.*.name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
             'countries.*.is_default' => 'boolean',
             'countries.*.draft' => 'boolean',
             'countries.*.drafted_at' => 'nullable|date',

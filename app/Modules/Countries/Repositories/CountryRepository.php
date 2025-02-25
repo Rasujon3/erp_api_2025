@@ -250,7 +250,7 @@ class CountryRepository
             ->find($id);
         return $getDataForSingleExcel;
     }
-    public function bulkUpdate($request): ?Country
+    public function bulkUpdate($request)
     {
         DB::beginTransaction();
         try {
@@ -287,7 +287,7 @@ class CountryRepository
             }
 
             DB::commit();
-            return $country;
+            return true;
         } catch (Exception $e) {
             DB::rollBack();
 

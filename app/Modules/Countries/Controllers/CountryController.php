@@ -61,6 +61,9 @@ class CountryController extends AppBaseController
     public function store(CountryRequest $request)
     {
         $country = $this->countryRepository->store($request->all());
+        if (!$country) {
+            return $this->sendError('Something went wrong!!! [CCS-01]', 500);
+        }
         return $this->sendResponse($country, 'Country created successfully!');
     }
 
@@ -71,7 +74,10 @@ class CountryController extends AppBaseController
         if (!$data) {
             return $this->sendError('Country not found');
         }
-        $this->countryRepository->update($data, $request->all());
+        $updated = $this->countryRepository->update($data, $request->all());
+        if (!$updated) {
+            return $this->sendError('Something went wrong!!! [CCU-01]', 500);
+        }
         return $this->sendResponse($country, 'Country updated successfully!');
     }
 
@@ -107,7 +113,7 @@ class CountryController extends AppBaseController
             Log::error('Error exporting countries as PDF: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            return $this->sendError('Something went wrong!!! [CC-01]');
+            return $this->sendError('Something went wrong!!! [CC-01]',500);
         }
     }
     /**
@@ -135,7 +141,7 @@ class CountryController extends AppBaseController
             Log::error('Error exporting countries as Single PDF: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            return $this->sendError('Something went wrong!!! [CC-02]');
+            return $this->sendError('Something went wrong!!! [CC-02]', 500);
         }
     }
     /**
@@ -166,7 +172,7 @@ class CountryController extends AppBaseController
             Log::error('Error exporting countries as Excel: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            return $this->sendError('Something went wrong!!! [CC-03]');
+            return $this->sendError('Something went wrong!!! [CC-03]', 500);
         }
     }
 
@@ -195,7 +201,7 @@ class CountryController extends AppBaseController
             Log::error('Error exporting countries as Single Excel: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            return $this->sendError('Something went wrong!!! [CC-04]');
+            return $this->sendError('Something went wrong!!! [CC-04]', 500);
         }
     }
 
@@ -230,13 +236,16 @@ class CountryController extends AppBaseController
             Log::error('Error exporting countries as Generate Excel: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            return $this->sendError('Something went wrong!!! [CC-04]');
+            return $this->sendError('Something went wrong!!! [CC-04]', 500);
         }
     }
     // bulk update
     public function bulkUpdate(CountryBulkRequest $request)
     {
-        $this->countryRepository->bulkUpdate($request);
+        $bulkUpdate = $this->countryRepository->bulkUpdate($request);
+        if (!$bulkUpdate) {
+            return $this->sendError('Something went wrong!!! [CCBU-05]', 500);
+        }
         return $this->sendResponse([],'Country Bulk updated successfully!');
     }
 }
