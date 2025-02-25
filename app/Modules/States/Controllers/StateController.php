@@ -53,7 +53,12 @@ class StateController extends AppBaseController
         if (!$data) {
             return $this->sendError('State not found');
         }
-        // ToDo Check if state exists on cities table
+        if (isset($request->is_delete) && $request->is_delete == 1) {
+            $checkExist = $this->stateRepository->checkExist($data->id);
+            if ($checkExist) {
+                return $this->sendError('State already used, cannot be deleted', 400);
+            }
+        }
         $this->stateRepository->update($data, $request->all());
         return $this->sendResponse($state, 'State updated successfully!');
     }

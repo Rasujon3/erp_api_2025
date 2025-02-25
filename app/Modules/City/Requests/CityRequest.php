@@ -27,6 +27,7 @@ class CityRequest extends FormRequest
      */
     public function rules()
     {
-        return City::rules();
+        $cityId = $this->route('city') ?: null;
+        return City::rules($cityId);
     }
 }

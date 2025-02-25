@@ -2,14 +2,10 @@
 
 namespace App\Modules\City\Controllers;
 
-use App\Modules\Admin\Models\Country;
 use App\Modules\City\Queries\CityDatatable;
 use App\Modules\City\Repositories\CityRepository;
+use App\Modules\City\Requests\CityBulkRequest;
 use App\Modules\City\Requests\CityRequest;
-use App\Modules\States\Models\State;
-use App\Modules\States\Queries\StateDatatable;
-use App\Modules\States\Repositories\StateRepository;
-use App\Modules\States\Requests\StateRequest;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AppBaseController;
 
@@ -23,69 +19,53 @@ class CityController extends AppBaseController
         $this->cityRepository = $cityRepo;
         $this->cityDatatable = $cityDatatable;
     }
-
-    // Fetch all states
+    // Fetch all data
     public function index()
     {
         $statues = $this->cityRepository->all();
         return $this->sendResponse($statues, 'Cities retrieved successfully.');
     }
-    public function getSummary()
+
+    // Store data
+    public function store(CityRequest $request)
     {
-        $summary = $this->cityRepository->getSummaryData();
-        return $this->sendResponse($summary, 'City summary retrieved successfully.');
+        $city = $this->cityRepository->store($request->all());
+        if (!$city) {
+            return $this->sendError('Something went wrong!!! [CS-01]', 500);
+        }
+        return $this->sendResponse($city, 'City created successfully!');
     }
 
-
-    // Get DataTable records
-    public function getCitiesDataTable(Request $request)
-    {
-        $data = CityDatatable::getDataForDatatable($request);
-        return $this->sendResponse($data, 'City DataTable data retrieved successfully.');
-    }
-
-    // Get single country details
-//    public function show(City $state)
+    // Get single details data
     public function show($city)
     {
         $data = $this->cityRepository->find($city);
-        // check if city exists
         if (!$data) {
             return $this->sendError('City not found');
         }
         $summary = $this->cityRepository->getData($city);
         return $this->sendResponse($summary, 'City retrieved successfully.');
     }
-
-    public function store(CityRequest $request)
-    {
-        $city = $this->cityRepository->store($request->all());
-        return $this->sendResponse($city, 'City created successfully!');
-    }
-
-    // Update country
+    // Update data
     public function update(CityRequest $request, $city)
-//    public function update(Request $request, Country $country)
     {
         $data = $this->cityRepository->find($city);
-        // check if city exists
         if (!$data) {
             return $this->sendError('City not found');
         }
-        $this->cityRepository->update($data, $request->all());
+        $updated = $this->cityRepository->update($data, $request->all());
+        if (!$updated) {
+            return $this->sendError('Something went wrong!!! [CU-04]', 500);
+        }
         return $this->sendResponse($city, 'City updated successfully!');
     }
-
-    // Delete country
-//    public function destroy(City $state)
-    public function destroy($state)
+    // bulk update
+    public function bulkUpdate(CityBulkRequest $request)
     {
-        $data = $this->cityRepository->find($state);
-        // check if state exists
-        if (!$data) {
-            return $this->sendError('City not found');
+        $bulkUpdate = $this->cityRepository->bulkUpdate($request);
+        if (!$bulkUpdate) {
+            return $this->sendError('Something went wrong!!! [CBU-05]', 500);
         }
-        $this->cityRepository->delete($data);
-        return $this->sendSuccess('City deleted successfully!');
+        return $this->sendResponse([],'City Bulk updated successfully!');
     }
 }

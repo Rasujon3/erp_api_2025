@@ -2,6 +2,7 @@
 
 namespace App\Modules\States\Models;
 
+use App\Modules\City\Models\City;
 use App\Modules\Countries\Models\Country;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -90,5 +91,10 @@ class State extends Model
     public function country()
     {
         return $this->belongsTo(Country::class, 'country_id');
+    }
+    // hasMany
+    public function cities()
+    {
+        return $this->hasMany(City::class, 'state_id');
     }
 }

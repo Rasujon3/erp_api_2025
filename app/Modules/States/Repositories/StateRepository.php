@@ -4,6 +4,7 @@ namespace App\Modules\States\Repositories;
 
 use App\Modules\Admin\Models\Country;
 use App\Helpers\ActivityLogger;
+use App\Modules\City\Models\City;
 use App\Modules\States\Models\State;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -185,5 +186,13 @@ class StateRepository
 
             return null;
         }
+    }
+    public function checkExist($id): bool
+    {
+        $exist = City::where('state_id', $id)->whereNull('deleted_at')->exists();
+        if ($exist) {
+            return true;
+        }
+        return false;
     }
 }
