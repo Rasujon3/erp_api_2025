@@ -3,6 +3,7 @@
 namespace App\Modules\Countries\Controllers;
 
 use App\Modules\Countries\Requests\CountryBulkRequest;
+use App\Modules\Countries\Requests\CountryImportRequest;
 use Exception;
 use Illuminate\Http\Request;
 use App\Modules\Countries\Repositories\CountryRepository;
@@ -253,5 +254,14 @@ class CountryController extends AppBaseController
             return $this->sendError('Something went wrong!!! [CCBU-05]', 500);
         }
         return $this->sendResponse([],'Country Bulk updated successfully!');
+    }
+    // import data
+    public function import(CountryImportRequest $request)
+    {
+        $import = $this->countryRepository->import($request);
+        if (!$import) {
+            return $this->sendError('Something went wrong!!! [CCBU-06]', 500);
+        }
+        return $this->sendResponse([],'Country imported successfully!');
     }
 }

@@ -61,9 +61,8 @@ class CountryRepository
 
     public function store(array $data): ?Country
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-
             // Set drafted_at timestamp if it's a draft
             if ($data['draft'] == 1) {
                 $data['drafted_at'] = now();
@@ -324,5 +323,51 @@ class CountryRepository
             return true;
         }
         return false;
+    }
+    public function import($request)
+    {
+        DB::beginTransaction();
+        try {
+            foreach ($request->countries as $data) {
+                // create data
+                $country = Country::create([
+                    'code' => $data['code'] ?? '',
+                    'name' => $data['name'] ?? '',
+                    'name_in_bangla' => $data['name_in_bangla'] ?? null,
+                    'name_in_arabic' => $data['name_in_arabic'] ?? null,
+                    'is_default' => $data['is_default'] ?? 0,
+                    'draft' => $data['draft'] ?? 0,
+                    'drafted_at' => $data['draft'] == 1 ? now() : null,
+                    'is_active' => $data['is_active'] ?? 1,
+                ]);
+
+                // Handle flag image create if provided
+                /*
+                if (isset($data['flag']) && $request->hasFile("countries.{$data['id']}.flag")) {
+                    $flagPath = $request->file("countries.{$data['id']}.flag")->store('flags', 'public');
+                    $country->update(['flag' => $flagPath]);
+                }
+                */
+                // Log activity for update
+                ActivityLogger::log('Country Created', 'Country', 'Country', $country->id, [
+                    'name' => $country->name
+                ]);
+            }
+
+            DB::commit();
+            return true;
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            // Log the error
+            Log::error('Error bulk import country: ', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return null;
+        }
     }
 }

@@ -89,6 +89,23 @@ class Country extends Model
             'countries.*.flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
     }
+    public static function importRules()
+    {
+        $uniqueCodeRule = Rule::unique('countries', 'code')
+            ->whereNull('deleted_at');
+        return [
+            'countries' => 'required|array|min:1',
+            'countries.*.code' => ['required', 'string', 'max:45', $uniqueCodeRule],
+            'countries.*.name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+            'countries.*.name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
+            'countries.*.name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
+            'countries.*.is_default' => 'boolean',
+            'countries.*.draft' => 'boolean',
+            'countries.*.drafted_at' => 'nullable|date',
+            'countries.*.is_active' => 'boolean',
+            'countries.*.flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ];
+    }
 
     public function state() : hasMany
     {
