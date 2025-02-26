@@ -12,8 +12,8 @@ return new class extends Migration
             $table->id();
             $table->string('code', 45);
             $table->string('name', 191);
-            $table->string('name_in_bangla', 191);
-            $table->string('name_in_arabic', 191);
+            $table->string('name_in_bangla', 191)->nullable();
+            $table->string('name_in_arabic', 191)->nullable();
             $table->boolean('is_default')->default(false);
             $table->boolean('draft')->default(false);
             $table->timestamp('drafted_at')->nullable();
