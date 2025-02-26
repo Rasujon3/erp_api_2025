@@ -19,6 +19,7 @@ class City extends Model
     protected $table = 'cities';
 
     protected $fillable = [
+        'code',
         'name',
         'name_in_bangla',
         'name_in_arabic',
@@ -27,20 +28,20 @@ class City extends Model
         'drafted_at',
         'is_active',
         'country_id',
-        'state_id',
-        'description'
+        'state_id'
     ];
 
     public static function rules($cityId = null)
     {
-        $uniqueNameRule = Rule::unique('cities', 'name')
+        $uniqueCodeRule = Rule::unique('cities', 'code')
             ->whereNull('deleted_at');
 
         if ($cityId) {
-            $uniqueNameRule->ignore($cityId);
+            $uniqueCodeRule->ignore($cityId);
         }
         return [
-            'name' => ['required', 'string', 'max:191', 'regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u' , $uniqueNameRule],
+            'code' => ['required', 'string', 'max:45', $uniqueCodeRule],
+            'name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
             'name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u', // regex for Bangla characters with spaces
             'name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u', // regex for Arabic characters with spaces
             'is_default' => 'boolean',
@@ -55,7 +56,6 @@ class City extends Model
                 'required',
                 Rule::exists('states', 'id')->whereNull('deleted_at')
             ],
-            'description' => 'nullable|string'
         ];
     }
     public static function bulkRules()
@@ -66,23 +66,23 @@ class City extends Model
                 'required',
                 Rule::exists('cities', 'id')->whereNull('deleted_at')
             ],
-            'cities.*.name' => [
+            'cities.*.code' => [
                 'required',
                 'string',
-                'max:191',
-                'regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+                'max:45',
                 function ($attribute, $value, $fail) {
-                    $stateId = request()->input(str_replace('.name', '.id', $attribute));
-                    $exists = City::where('name', $value)
+                    $cityId = request()->input(str_replace('.code', '.id', $attribute));
+                    $exists = City::where('code', $value)
                         ->whereNull('deleted_at')
-                        ->where('id', '!=', $stateId)
+                        ->where('id', '!=', $cityId)
                         ->exists();
 
                     if ($exists) {
-                        $fail('The city name "' . $value . '" has already been taken.');
+                        $fail('The city code "' . $value . '" has already been taken.');
                     }
                 },
             ],
+            'cities.*.name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
             'cities.*.name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
             'cities.*.name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
             'cities.*.is_default' => 'boolean',
@@ -97,7 +97,6 @@ class City extends Model
                 'required',
                 Rule::exists('states', 'id')->whereNull('deleted_at')
             ],
-            'cities.*.description' => 'nullable|string',
         ];
     }
     public function country() : belongsTo

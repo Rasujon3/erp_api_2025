@@ -5,7 +5,6 @@ namespace App\Modules\City\Repositories;
 use App\Helpers\ActivityLogger;
 use App\Modules\Areas\Models\Area;
 use App\Modules\City\Models\City;
-use App\Modules\States\Models\State;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -170,6 +169,7 @@ class CityRepository
 
                 // Update state details
                 $city->update([
+                    'code' => $data['code'] ?? $city->code,
                     'name' => $data['name'] ?? $city->name,
                     'name_in_bangla' => $data['name_in_bangla'] ?? $city->name_in_bangla,
                     'name_in_arabic' => $data['name_in_arabic'] ?? $city->name_in_arabic,
