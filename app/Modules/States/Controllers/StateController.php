@@ -53,7 +53,7 @@ class StateController extends AppBaseController
         if (!$data) {
             return $this->sendError('State not found');
         }
-        if (isset($request->is_delete) && $request->is_delete == 1) {
+        if (!empty($request->is_delete) && $request->is_delete == 1) {
             $checkExist = $this->stateRepository->checkExist($data->id);
             if ($checkExist) {
                 return $this->sendError('State already used, cannot be deleted', 400);

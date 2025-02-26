@@ -1,0 +1,45 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('areas', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 191);
+            $table->string('name_in_bangla', 191)->nullable();
+            $table->string('name_in_arabic', 191)->nullable();
+            $table->foreignId('country_id')->references('id')->on('countries')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
+            $table->foreignId('state_id')->references('id')->on('states')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
+            $table->foreignId('city_id')->references('id')->on('cities')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
+            $table->boolean('is_default')->default(false);
+            $table->boolean('draft')->default(false);
+            $table->timestamp('drafted_at')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->text('description')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('areas');
+    }
+};

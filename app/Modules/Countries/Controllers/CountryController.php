@@ -74,7 +74,7 @@ class CountryController extends AppBaseController
         if (!$data) {
             return $this->sendError('Country not found');
         }
-        if (isset($request->is_delete) && $request->is_delete == 1) {
+        if (!empty($request->is_delete) && $request->is_delete == 1) {
             $checkExist = $this->countryRepository->checkExist($data->id);
             if ($checkExist) {
                 return $this->sendError('Country already used, cannot be deleted', 400);

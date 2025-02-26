@@ -3,6 +3,7 @@
 namespace App\Modules\City\Repositories;
 
 use App\Helpers\ActivityLogger;
+use App\Modules\Areas\Models\Area;
 use App\Modules\City\Models\City;
 use App\Modules\States\Models\State;
 use Illuminate\Support\Facades\DB;
@@ -202,5 +203,13 @@ class CityRepository
 
             return null;
         }
+    }
+    public function checkExist($id): bool
+    {
+        $existOnArea = Area::where('city_id', $id)->whereNull('deleted_at')->exists();
+        if ($existOnArea) {
+            return true;
+        }
+        return false;
     }
 }

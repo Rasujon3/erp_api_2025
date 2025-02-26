@@ -2,13 +2,14 @@
 
 namespace App\Modules\Areas\Models;
 
-use App\Modules\Admin\Models\Country;
 use App\Modules\City\Models\City;
+use App\Modules\Countries\Models\Country;
 use App\Modules\States\Models\State;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\Rule;
 
 class Area extends Model
 {
@@ -17,19 +18,93 @@ class Area extends Model
 
     protected $fillable = [
         'name',
+        'name_in_bangla',
+        'name_in_arabic',
+        'is_default',
+        'draft',
+        'drafted_at',
+        'is_active',
         'country_id',
-        'city_id',
         'state_id',
+        'city_id',
         'description'
     ];
 
     public static function rules($areaId = null)
     {
+        $uniqueNameRule = Rule::unique('areas', 'name')
+            ->whereNull('deleted_at');
+
+        if ($areaId) {
+            $uniqueNameRule->ignore($areaId);
+        }
         return [
-            'name' => 'required|unique:areas,name,' . $areaId . ',id', // Make sure the name is unique except for the current area
-            'country_id' => 'required|exists:countries,id',
-            'city_id' => 'required|exists:cities,id',
-            'state_id' => 'required|exists:states,id',
+            'name' => ['required', 'string', 'max:191', 'regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u' , $uniqueNameRule],
+            'name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u', // regex for Bangla characters with spaces
+            'name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u', // regex for Arabic characters with spaces
+            'is_default' => 'boolean',
+            'draft' => 'boolean',
+            'drafted_at' => 'nullable|date',
+            'is_active' => 'boolean',
+            'country_id' => [
+                'required',
+                Rule::exists('countries', 'id')->whereNull('deleted_at')
+            ],
+            'state_id' => [
+                'required',
+                Rule::exists('states', 'id')->whereNull('deleted_at')
+            ],
+            'city_id' => [
+                'required',
+                Rule::exists('cities', 'id')->whereNull('deleted_at')
+            ],
+            'description' => 'nullable|string'
+        ];
+    }
+    public static function bulkRules()
+    {
+        return [
+            'areas' => 'required|array|min:1',
+            'areas.*.id' => [
+                'required',
+                Rule::exists('areas', 'id')->whereNull('deleted_at')
+            ],
+            'areas.*.name' => [
+                'required',
+                'string',
+                'max:191',
+                'regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+                function ($attribute, $value, $fail) {
+                    $areaId = request()->input(str_replace('.name', '.id', $attribute));
+                    $exists = Area::where('name', $value)
+                        ->whereNull('deleted_at')
+                        ->where('id', '!=', $areaId)
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('The area name "' . $value . '" has already been taken.');
+                    }
+                },
+            ],
+            'areas.*.name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
+            'areas.*.name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
+            'areas.*.is_default' => 'boolean',
+            'areas.*.draft' => 'boolean',
+            'areas.*.drafted_at' => 'nullable|date',
+            'areas.*.is_active' => 'boolean',
+            'areas.*.country_id' => [
+                'required',
+                Rule::exists('countries', 'id')->whereNull('deleted_at')
+            ],
+            'areas.*.state_id' => [
+                'required',
+                Rule::exists('states', 'id')->whereNull('deleted_at')
+            ],
+            'areas.*.city_id' => [
+                'required',
+                Rule::exists('cities', 'id')->whereNull('deleted_at')
+            ],
+            'areas.*.description' => 'nullable|string',
         ];
     }
     public function country() : belongsTo

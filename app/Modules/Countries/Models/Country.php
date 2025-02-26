@@ -2,9 +2,12 @@
 
 namespace App\Modules\Countries\Models;
 
+use App\Modules\Areas\Models\Area;
+use App\Modules\City\Models\City;
 use App\Modules\States\Models\State;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Validation\Rule;
 
@@ -86,9 +89,17 @@ class Country extends Model
             'countries.*.flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
     }
-    // hasMany
-    public function states()
+
+    public function state() : hasMany
     {
         return $this->hasMany(State::class, 'country_id');
+    }
+    public function city() : hasMany
+    {
+        return $this->hasMany(City::class, 'country_id');
+    }
+    public function area() : hasMany
+    {
+        return $this->hasMany(Area::class, 'city_id');
     }
 }

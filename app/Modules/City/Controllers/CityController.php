@@ -53,6 +53,12 @@ class CityController extends AppBaseController
         if (!$data) {
             return $this->sendError('City not found');
         }
+        if (!empty($request->is_delete) && $request->is_delete == 1) {
+            $checkExist = $this->cityRepository->checkExist($data->id);
+            if ($checkExist) {
+                return $this->sendError('City already used, cannot be deleted', 400);
+            }
+        }
         $updated = $this->cityRepository->update($data, $request->all());
         if (!$updated) {
             return $this->sendError('Something went wrong!!! [CU-04]', 500);

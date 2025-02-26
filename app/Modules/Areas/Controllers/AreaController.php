@@ -2,17 +2,10 @@
 
 namespace App\Modules\Areas\Controllers;
 
-use App\Modules\Admin\Models\Country;
 use App\Modules\Areas\Queries\AreaDatatable;
 use App\Modules\Areas\Repositories\AreaRepository;
+use App\Modules\Areas\Requests\AreaBulkRequest;
 use App\Modules\Areas\Requests\AreaRequest;
-use App\Modules\City\Queries\CityDatatable;
-use App\Modules\City\Repositories\CityRepository;
-use App\Modules\City\Requests\CityRequest;
-use App\Modules\States\Models\State;
-use App\Modules\States\Queries\StateDatatable;
-use App\Modules\States\Repositories\StateRepository;
-use App\Modules\States\Requests\StateRequest;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AppBaseController;
 
@@ -26,68 +19,53 @@ class AreaController extends AppBaseController
         $this->areaRepository = $areaRepo;
         $this->areaDatatable = $areaDatatable;
     }
-
-    // Fetch all states
+    // Fetch all data
     public function index()
     {
-        $areas = $this->areaRepository->all();
-        return $this->sendResponse($areas, 'Areas retrieved successfully.');
+        $data = $this->areaRepository->all();
+        return $this->sendResponse($data, 'Areas retrieved successfully.');
     }
-    public function getSummary()
+
+    // Store data
+    public function store(AreaRequest $request)
     {
-        $summary = $this->areaRepository->getSummaryData();
-        return $this->sendResponse($summary, 'Area summary retrieved successfully.');
+        $area = $this->areaRepository->store($request->all());
+        if (!$area) {
+            return $this->sendError('Something went wrong!!! [AS-01]', 500);
+        }
+        return $this->sendResponse($area, 'Area created successfully!');
     }
 
-
-    // Get DataTable records
-    public function getAreasDataTable(Request $request)
-    {
-        $data = AreaDatatable::getDataForDatatable($request);
-        return $this->sendResponse($data, 'Area DataTable data retrieved successfully.');
-    }
-
-    // Get single country details
-//    public function show(Area $state)
+    // Get single details data
     public function show($area)
     {
         $data = $this->areaRepository->find($area);
-        // check if city exists
         if (!$data) {
             return $this->sendError('Area not found');
         }
         $summary = $this->areaRepository->getData($area);
         return $this->sendResponse($summary, 'Area retrieved successfully.');
     }
-
-    public function store(AreaRequest $request)
-    {
-        $city = $this->areaRepository->store($request->all());
-        return $this->sendResponse($city, 'Area created successfully!');
-    }
-
-    // Update country
+    // Update data
     public function update(AreaRequest $request, $area)
     {
         $data = $this->areaRepository->find($area);
-        // check if city exists
         if (!$data) {
             return $this->sendError('Area not found');
         }
-        $this->areaRepository->update($data, $request->all());
+        $updated = $this->areaRepository->update($data, $request->all());
+        if (!$updated) {
+            return $this->sendError('Something went wrong!!! [AU-04]', 500);
+        }
         return $this->sendResponse($area, 'Area updated successfully!');
     }
-
-    // Delete country
-//    public function destroy(Area $state)
-    public function destroy($area)
+    // bulk update
+    public function bulkUpdate(AreaBulkRequest $request)
     {
-        $data = $this->areaRepository->find($area);
-        // check if state exists
-        if (!$data) {
-            return $this->sendError('Area not found');
+        $bulkUpdate = $this->areaRepository->bulkUpdate($request);
+        if (!$bulkUpdate) {
+            return $this->sendError('Something went wrong!!! [ABU-05]', 500);
         }
-        $this->areaRepository->delete($data);
-        return $this->sendSuccess('Area deleted successfully!');
+        return $this->sendResponse([],'Area Bulk updated successfully!');
     }
 }

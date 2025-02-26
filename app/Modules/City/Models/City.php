@@ -2,10 +2,13 @@
 
 namespace App\Modules\City\Models;
 
+use App\Modules\Areas\Models\Area;
 use App\Modules\Countries\Models\Country;
 use App\Modules\States\Models\State;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Validation\Rule;
 
@@ -97,12 +100,16 @@ class City extends Model
             'cities.*.description' => 'nullable|string',
         ];
     }
-    public function country()
+    public function country() : belongsTo
     {
         return $this->belongsTo(Country::class,'country_id');
     }
-    public function state()
+    public function state() : belongsTo
     {
         return $this->belongsTo(State::class, 'state_id');
+    }
+    public function area() : hasMany
+    {
+        return $this->hasMany(Area::class, 'city_id');
     }
 }

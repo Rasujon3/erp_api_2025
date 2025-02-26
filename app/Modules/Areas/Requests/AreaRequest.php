@@ -32,12 +32,7 @@ class AreaRequest extends FormRequest
      */
     public function rules()
     {
-//        $areaId = $this->route('area') ? $this->route('area')->id : null;
-        $areaId = (int) $this->route('area') ?: null;
-        $name = $this->input('name');
-        Log::info('Area ID from route:', ['areaId' => $areaId]); // Log the value
-        Log::info('Area ID from name:', ['areaId' => $name]); // Log the value
+        $areaId = $this->route('area') ?: null;
         return Area::rules($areaId);
-//        return Area::rules($name);
     }
 }
