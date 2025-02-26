@@ -17,6 +17,7 @@ class Area extends Model
     protected $table = 'areas';
 
     protected $fillable = [
+        'code',
         'name',
         'name_in_bangla',
         'name_in_arabic',
@@ -27,19 +28,19 @@ class Area extends Model
         'country_id',
         'state_id',
         'city_id',
-        'description'
     ];
 
     public static function rules($areaId = null)
     {
-        $uniqueNameRule = Rule::unique('areas', 'name')
+        $uniqueCodeRule = Rule::unique('areas', 'code')
             ->whereNull('deleted_at');
 
         if ($areaId) {
-            $uniqueNameRule->ignore($areaId);
+            $uniqueCodeRule->ignore($areaId);
         }
         return [
-            'name' => ['required', 'string', 'max:191', 'regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u' , $uniqueNameRule],
+            'code' => ['required', 'string', 'max:45', $uniqueCodeRule],
+            'name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
             'name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u', // regex for Bangla characters with spaces
             'name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u', // regex for Arabic characters with spaces
             'is_default' => 'boolean',
@@ -58,7 +59,6 @@ class Area extends Model
                 'required',
                 Rule::exists('cities', 'id')->whereNull('deleted_at')
             ],
-            'description' => 'nullable|string'
         ];
     }
     public static function bulkRules()
@@ -69,23 +69,23 @@ class Area extends Model
                 'required',
                 Rule::exists('areas', 'id')->whereNull('deleted_at')
             ],
-            'areas.*.name' => [
+            'areas.*.code' => [
                 'required',
                 'string',
-                'max:191',
-                'regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+                'max:45',
                 function ($attribute, $value, $fail) {
-                    $areaId = request()->input(str_replace('.name', '.id', $attribute));
-                    $exists = Area::where('name', $value)
+                    $areaId = request()->input(str_replace('.code', '.id', $attribute));
+                    $exists = Area::where('code', $value)
                         ->whereNull('deleted_at')
                         ->where('id', '!=', $areaId)
                         ->exists();
 
                     if ($exists) {
-                        $fail('The area name "' . $value . '" has already been taken.');
+                        $fail('The area code "' . $value . '" has already been taken.');
                     }
                 },
             ],
+            'areas.*.name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
             'areas.*.name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
             'areas.*.name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
             'areas.*.is_default' => 'boolean',
@@ -104,7 +104,6 @@ class Area extends Model
                 'required',
                 Rule::exists('cities', 'id')->whereNull('deleted_at')
             ],
-            'areas.*.description' => 'nullable|string',
         ];
     }
     public function country() : belongsTo

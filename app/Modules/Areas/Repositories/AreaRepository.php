@@ -4,8 +4,6 @@ namespace App\Modules\Areas\Repositories;
 
 use App\Helpers\ActivityLogger;
 use App\Modules\Areas\Models\Area;
-use App\Modules\City\Models\City;
-use App\Modules\States\Models\State;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -179,6 +177,7 @@ class AreaRepository
 
                 // Update state details
                 $area->update([
+                    'code' => $data['code'] ?? $area->code,
                     'name' => $data['name'] ?? $area->name,
                     'name_in_bangla' => $data['name_in_bangla'] ?? $area->name_in_bangla,
                     'name_in_arabic' => $data['name_in_arabic'] ?? $area->name_in_arabic,
