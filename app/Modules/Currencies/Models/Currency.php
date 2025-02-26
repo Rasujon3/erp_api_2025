@@ -2,13 +2,10 @@
 
 namespace App\Modules\Currencies\Models;
 
-use App\Modules\Admin\Models\Country;
-use App\Modules\City\Models\City;
-use App\Modules\States\Models\State;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class Currency extends Model
 {
@@ -17,14 +14,72 @@ class Currency extends Model
     protected $table = 'currencies';
 
     protected $fillable = [
+        'code',
         'name',
-        'description'
+        'name_in_bangla',
+        'name_in_arabic',
+        'is_default',
+        'draft',
+        'drafted_at',
+        'is_active',
+        'symbol',
+        'exchange'
     ];
 
     public static function rules($currencyId = null)
     {
+        $uniqueCodeRule = Rule::unique('currencies', 'code')
+            ->whereNull('deleted_at');
+
+        if ($currencyId) {
+            $uniqueCodeRule->ignore($currencyId);
+        }
         return [
-            'name' => 'required|unique:currencies,name,' . $currencyId . ',id', // Make sure the name is unique except for the current currency
+            'code' => ['required', 'string', 'max:45', $uniqueCodeRule],
+            'name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
+            'name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u', // regex for Bangla characters with spaces
+            'name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u', // regex for Arabic characters with spaces
+            'is_default' => 'boolean',
+            'draft' => 'boolean',
+            'drafted_at' => 'nullable|date',
+            'is_active' => 'boolean',
+            'symbol' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'exchange' => 'required|numeric|min:0|max:999999.99|regex:/^\d+(\.\d{1,2})?$/',
+        ];
+    }
+    public static function bulkRules()
+    {
+        return [
+            'currencies' => 'required|array|min:1',
+            'currencies.*.id' => [
+                'required',
+                Rule::exists('currencies', 'id')->whereNull('deleted_at')
+            ],
+            'currencies.*.code' => [
+                'required',
+                'string',
+                'max:45',
+                function ($attribute, $value, $fail) {
+                    $currencyId = request()->input(str_replace('.code', '.id', $attribute));
+                    $exists = Currency::where('code', $value)
+                        ->whereNull('deleted_at')
+                        ->where('id', '!=', $currencyId)
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('The currency code "' . $value . '" has already been taken.');
+                    }
+                },
+            ],
+            'currencies.*.name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+            'currencies.*.name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
+            'currencies.*.name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
+            'currencies.*.is_default' => 'boolean',
+            'currencies.*.draft' => 'boolean',
+            'currencies.*.drafted_at' => 'nullable|date',
+            'currencies.*.is_active' => 'boolean',
+            'currencies.*.flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'currencies.*.exchange' => 'required|numeric|min:0|max:999999.99|regex:/^\d+(\.\d{1,2})?$/',
         ];
     }
 }

@@ -1,16 +1,13 @@
 <?php
 
-use App\Modules\Areas\Controllers\AreaController;
 use App\Modules\Currencies\Controllers\CurrencyController;
 use Illuminate\Support\Facades\Route;
 
 
-Route::prefix('admin/currencies')->middleware('auth:sanctum')->group(function () {
-    Route::get('/', [CurrencyController::class, 'index']);          // List states
-    Route::get('/summary', [CurrencyController::class, 'getSummary']); // Get states summary
-    Route::get('/datatable', [CurrencyController::class, 'getCurrenciesDataTable']);  // Get DataTable data
-    Route::get('/{currency}', [CurrencyController::class, 'show']);    // View states
-    Route::post('/', [CurrencyController::class, 'store']);           // Create states
-    Route::put('/{currency}', [CurrencyController::class, 'update']);  // Update states
-    Route::delete('/{currency}', [CurrencyController::class, 'destroy']); // Delete states
+Route::prefix('currencies')->middleware('auth:sanctum')->group(function () {
+    Route::get('/list', [CurrencyController::class, 'index']);          // List data
+    Route::post('/create', [CurrencyController::class, 'store']);           // Create data
+    Route::put('/bulk-update', [CurrencyController::class, 'bulkUpdate']); // Bulk update
+    Route::get('/view/{currency}', [CurrencyController::class, 'show']);    // View data
+    Route::put('/update/{currency}', [CurrencyController::class, 'update']);  // Update data
 });

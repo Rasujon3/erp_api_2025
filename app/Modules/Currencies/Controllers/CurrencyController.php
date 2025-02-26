@@ -2,21 +2,10 @@
 
 namespace App\Modules\Currencies\Controllers;
 
-use App\Modules\Admin\Models\Country;
-use App\Modules\Areas\Queries\AreaDatatable;
-use App\Modules\Areas\Repositories\AreaRepository;
-use App\Modules\Areas\Requests\AreaRequest;
-use App\Modules\City\Queries\CityDatatable;
-use App\Modules\City\Repositories\CityRepository;
-use App\Modules\City\Requests\CityRequest;
 use App\Modules\Currencies\Queries\CurrencyDatatable;
 use App\Modules\Currencies\Repositories\CurrencyRepository;
+use App\Modules\Currencies\Requests\CurrencyBulkRequest;
 use App\Modules\Currencies\Requests\CurrencyRequest;
-use App\Modules\States\Models\State;
-use App\Modules\States\Queries\StateDatatable;
-use App\Modules\States\Repositories\StateRepository;
-use App\Modules\States\Requests\StateRequest;
-use Illuminate\Http\Request;
 use App\Http\Controllers\AppBaseController;
 
 class CurrencyController extends AppBaseController
@@ -29,68 +18,50 @@ class CurrencyController extends AppBaseController
         $this->currencyRepository = $currencyRepo;
         $this->currencyDatatable = $currencyDatatable;
     }
-
-    // Fetch all states
+    // Fetch all data
     public function index()
     {
-        $areas = $this->currencyRepository->all();
-        return $this->sendResponse($areas, 'Currencies retrieved successfully.');
+        $countries = $this->currencyRepository->all();
+        return $this->sendResponse($countries, 'Currencies retrieved successfully.');
     }
-    public function getSummary()
-    {
-        $summary = $this->currencyRepository->getSummaryData();
-        return $this->sendResponse($summary, 'Currency summary retrieved successfully.');
-    }
-
-
-    // Get DataTable records
-    public function getCurrenciesDataTable(Request $request)
-    {
-        $data = CurrencyDatatable::getDataForDatatable($request);
-        return $this->sendResponse($data, 'Currency DataTable data retrieved successfully.');
-    }
-
-    // Get single country details
-//    public function show(Currency $state)
+    // Get single details
     public function show($currency)
     {
         $data = $this->currencyRepository->find($currency);
-        // check if currency exists
         if (!$data) {
             return $this->sendError('Currency not found');
         }
-//        $summary = $this->currencyRepository->getData($currency);
         return $this->sendResponse($data, 'Currency retrieved successfully.');
     }
-
+    // store data
     public function store(CurrencyRequest $request)
     {
-        $city = $this->currencyRepository->store($request->all());
-        return $this->sendResponse($city, 'Currency created successfully!');
+        $currency = $this->currencyRepository->store($request->all());
+        if (!$currency) {
+            return $this->sendError('Something went wrong!!! [CCYS-01]', 500);
+        }
+        return $this->sendResponse($currency, 'Currency created successfully!');
     }
-
-    // Update country
+    // Update data
     public function update(CurrencyRequest $request, $currency)
     {
         $data = $this->currencyRepository->find($currency);
-        // check if city exists
         if (!$data) {
             return $this->sendError('Currency not found');
         }
-        $this->currencyRepository->update($data, $request->all());
+        $updated = $this->currencyRepository->update($data, $request->all());
+        if (!$updated) {
+            return $this->sendError('Something went wrong!!! [CCYU-01]', 500);
+        }
         return $this->sendResponse($currency, 'Currency updated successfully!');
     }
-
-    // Delete country
-//    public function destroy(Currency $state)
-    public function destroy($currency)
+    // bulk update
+    public function bulkUpdate(CurrencyBulkRequest $request)
     {
-        $data = $this->currencyRepository->find($currency);
-        // check if state exists
-        if (!$data) {
-            return $this->sendError('Currency not found');
+        $bulkUpdate = $this->currencyRepository->bulkUpdate($request);
+        if (!$bulkUpdate) {
+            return $this->sendError('Something went wrong!!! [CCYBU-05]', 500);
         }
-        $this->currencyRepository->delete($data);
-        return $this->sendSuccess('Currency deleted successfully!');
+        return $this->sendResponse([],'Currency Bulk updated successfully!');
     }
 }
