@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('states', function (Blueprint $table) {
             $table->id();
+            $table->string('code', 45);
             $table->string('name', 191);
             $table->string('name_in_bangla', 191);
             $table->string('name_in_arabic', 191);
@@ -23,7 +24,6 @@ return new class extends Migration
             $table->boolean('draft')->default(false);
             $table->timestamp('drafted_at')->nullable();
             $table->boolean('is_active')->default(true);
-            $table->text('description')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

@@ -2,7 +2,6 @@
 
 namespace App\Modules\States\Repositories;
 
-use App\Modules\Admin\Models\Country;
 use App\Helpers\ActivityLogger;
 use App\Modules\Areas\Models\Area;
 use App\Modules\City\Models\City;
@@ -167,6 +166,7 @@ class StateRepository
 
                 // Update state details
                 $state->update([
+                    'code' => $data['code'] ?? $state->code,
                     'name' => $data['name'] ?? $state->name,
                     'name_in_bangla' => $data['name_in_bangla'] ?? $state->name_in_bangla,
                     'name_in_arabic' => $data['name_in_arabic'] ?? $state->name_in_arabic,

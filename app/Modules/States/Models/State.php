@@ -19,6 +19,7 @@ class State extends Model
     protected $table = 'states';
 
     protected $fillable = [
+        'code',
         'name',
         'name_in_bangla',
         'name_in_arabic',
@@ -26,20 +27,20 @@ class State extends Model
         'draft',
         'drafted_at',
         'is_active',
-        'country_id',
-        'description'
+        'country_id'
     ];
 
     public static function rules($stateId = null)
     {
-        $uniqueNameRule = Rule::unique('states', 'name')
+        $uniqueCodeRule = Rule::unique('states', 'code')
             ->whereNull('deleted_at');
 
         if ($stateId) {
-            $uniqueNameRule->ignore($stateId);
+            $uniqueCodeRule->ignore($stateId);
         }
         return [
-            'name' => ['required', 'string', 'max:191', 'regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u' , $uniqueNameRule],
+            'code' => ['required', 'string', 'max:45', $uniqueCodeRule],
+            'name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
             'name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u', // regex for Bangla characters with spaces
             'name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u', // regex for Arabic characters with spaces
             'is_default' => 'boolean',
@@ -50,7 +51,6 @@ class State extends Model
                 'required',
                 Rule::exists('countries', 'id')->whereNull('deleted_at') // Check if country exists & is NOT soft-deleted
             ],
-            'description' => 'nullable|string'
         ];
     }
     public static function bulkRules()
@@ -61,23 +61,23 @@ class State extends Model
                 'required',
                 Rule::exists('states', 'id')->whereNull('deleted_at')
             ],
-            'states.*.name' => [
+            'states.*.code' => [
                 'required',
                 'string',
-                'max:191',
-                'regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+                'max:45',
                 function ($attribute, $value, $fail) {
-                    $stateId = request()->input(str_replace('.name', '.id', $attribute));
-                    $exists = State::where('name', $value)
+                    $stateId = request()->input(str_replace('.code', '.id', $attribute));
+                    $exists = State::where('code', $value)
                         ->whereNull('deleted_at')
                         ->where('id', '!=', $stateId)
                         ->exists();
 
                     if ($exists) {
-                        $fail('The state name "' . $value . '" has already been taken.');
+                        $fail('The state code "' . $value . '" has already been taken.');
                     }
                 },
             ],
+            'states.*.name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
             'states.*.name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
             'states.*.name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
             'states.*.is_default' => 'boolean',
@@ -88,7 +88,6 @@ class State extends Model
                 'required',
                 Rule::exists('countries', 'id')->whereNull('deleted_at') // Check if country exists & is NOT soft-deleted
             ],
-            'states.*.description' => 'nullable|string',
         ];
     }
     public function country() : belongsTo
