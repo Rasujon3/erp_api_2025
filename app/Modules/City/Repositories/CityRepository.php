@@ -13,7 +13,12 @@ class CityRepository
 {
     public function all()
     {
-        $list = City::cursor(); // Load all records without soft-deleted
+        $list = City::leftJoin('countries', 'cities.country_id', '=', 'countries.id')
+            ->leftJoin('states', 'states.id', '=', 'cities.state_id')
+            ->whereNull('cities.deleted_at')
+            ->select('cities.*', 'countries.name as country_name', 'states.name as state_name')
+            ->get(); // Load all records without soft-deleted
+
         $cities = City::withTrashed()->get(); // Load all records including soft-deleted
 
         $totalDraft = $cities->where('draft', true)->count();

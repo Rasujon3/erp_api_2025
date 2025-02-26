@@ -14,7 +14,11 @@ class StateRepository
 {
     public function all()
     {
-        $list = State::cursor(); // Load all records without soft-deleted
+        $list = State::leftJoin('countries', 'states.country_id', '=', 'countries.id')
+            ->whereNull('states.deleted_at')
+            ->select('states.*', 'countries.name as country_name')
+            ->get(); // Load all records without soft-deleted
+
         $countries = State::withTrashed()->get(); // Load all records including soft-deleted
 
         $totalDraft = $countries->where('draft', true)->count();

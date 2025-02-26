@@ -12,7 +12,18 @@ class AreaRepository
 {
     public function all()
     {
-        $list = Area::cursor(); // Load all records without soft-deleted
+        $list = Area::leftJoin('countries', 'countries.id', '=', 'areas.country_id')
+            ->leftJoin('states', 'states.id', '=', 'areas.state_id')
+            ->leftJoin('cities', 'cities.id', '=', 'areas.city_id')
+            ->whereNull('areas.deleted_at')
+            ->select(
+                'areas.*',
+                'countries.name as country_name',
+                'states.name as state_name',
+                'cities.name as city_name'
+            )
+            ->get(); // Load all records without soft-deleted
+
         $areas = Area::withTrashed()->get(); // Load all records including soft-deleted
 
         $totalDraft = $areas->where('draft', true)->count();
