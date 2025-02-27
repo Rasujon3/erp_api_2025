@@ -2,14 +2,8 @@
 
 namespace App\Modules\Currencies\Requests;
 
-use App\Http\Controllers\AppBaseController;
-use App\Modules\Areas\Models\Area;
-use App\Modules\City\Models\City;
 use App\Modules\Currencies\Models\Currency;
-use App\Modules\States\Models\State;
 use Illuminate\Foundation\Http\FormRequest;
-use App\Modules\Admin\Models\Country;
-use Illuminate\Support\Facades\Log;
 
 // Import the Currency model
 
@@ -33,6 +27,20 @@ class CurrencyRequest extends FormRequest
      */
     public function rules()
     {
+        // Get the route name and apply null-safe operator
+        $routeName = $this->route()?->getName();
+
+        if ($routeName === 'currencies.import') {
+            //return Currency::importRules();
+        }
+
+        if ($routeName === 'currencies.bulkUpdate') {
+            return Currency::bulkRules();
+        }
+
+        if ($routeName === 'currencies.list') {
+            return Currency::listRules();
+        }
         $currencyId = $this->route('currency') ?: null;
         return Currency::rules($currencyId);
     }

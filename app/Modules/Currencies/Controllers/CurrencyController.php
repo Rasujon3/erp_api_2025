@@ -4,7 +4,6 @@ namespace App\Modules\Currencies\Controllers;
 
 use App\Modules\Currencies\Queries\CurrencyDatatable;
 use App\Modules\Currencies\Repositories\CurrencyRepository;
-use App\Modules\Currencies\Requests\CurrencyBulkRequest;
 use App\Modules\Currencies\Requests\CurrencyRequest;
 use App\Http\Controllers\AppBaseController;
 
@@ -19,9 +18,9 @@ class CurrencyController extends AppBaseController
         $this->currencyDatatable = $currencyDatatable;
     }
     // Fetch all data
-    public function index()
+    public function index(CurrencyRequest $request)
     {
-        $countries = $this->currencyRepository->all();
+        $countries = $this->currencyRepository->all($request);
         return $this->sendResponse($countries, 'Currencies retrieved successfully.');
     }
     // Get single details
@@ -56,7 +55,7 @@ class CurrencyController extends AppBaseController
         return $this->sendResponse($currency, 'Currency updated successfully!');
     }
     // bulk update
-    public function bulkUpdate(CurrencyBulkRequest $request)
+    public function bulkUpdate(CurrencyRequest $request)
     {
         $bulkUpdate = $this->currencyRepository->bulkUpdate($request);
         if (!$bulkUpdate) {

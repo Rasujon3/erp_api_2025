@@ -10,19 +10,21 @@ use Exception;
 
 class CurrencyRepository
 {
-    public function all()
+    public function all($request)
     {
-        $list = Currency::cursor(); // Load all records without soft-deleted
+        $list = $this->list($request);
+
         $currencies = Currency::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalDraft = $currencies->where('draft', true)->count();
-        $totalInactive = $currencies->where('is_active', false)->count();
-        $totalActive = $currencies->where('is_active', true)->count();
+        $totalDraft = $currencies->whereNull('deleted_at')->where('draft', true)->count();
+        $totalInactive = $currencies->whereNull('deleted_at')->where('is_active', false)->count();
+        $totalActive = $currencies->whereNull('deleted_at')->where('is_active', true)->count();
         $totalDeleted = $currencies->whereNotNull('deleted_at')->count();
-        $totalUpdated = $currencies->whereNotNull('updated_at')->count();
+        $totalUpdated = $currencies->whereNull('deleted_at')->whereNotNull('updated_at')->count();
 
-        // Ensure totalCurrencies is the sum of totalDraft + totalInactive + totalActive
-        $totalCurrencies = $totalDraft + $totalInactive + $totalActive + $totalDeleted;
+        // Ensure total Count is without soft-deleted
+        $totalCurrencies = $currencies->whereNull('deleted_at')->count();
+
         return [
             'totalCurrencies' => $totalCurrencies,
             'totalDraft' => $totalDraft,
@@ -32,6 +34,40 @@ class CurrencyRepository
             'totalDeleted' => $totalDeleted,
             'list' => $list,
         ];
+    }
+
+    public function list($request)
+    {
+        $query = Currency::withTrashed(); // Load all records without soft-deleted
+
+        if ($request->has('draft')) {
+            $query->where('draft', $request->input('draft'));
+        }
+        if ($request->has('is_active')) {
+            $query->where('is_active', $request->input('is_active'));
+        }
+        if ($request->has('is_default')) {
+            $query->where('is_default', $request->input('is_default'));
+        }
+        if ($request->has('is_deleted')) {
+            if ($request->input('is_deleted') == 1) {
+                $query->whereNotNull('deleted_at');
+            } else {
+                $query->whereNull('deleted_at');
+            }
+        } else {
+            $query->whereNull('deleted_at');
+        }
+        if ($request->has('is_updated')) {
+            if ($request->input('is_updated') == 1) {
+                $query->whereNotNull('updated_at');
+            } else {
+                $query->whereNull('updated_at');
+            }
+        }
+
+        $list = $query->get();
+        return $list;
     }
 
     public function store(array $data): ?Currency

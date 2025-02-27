@@ -82,4 +82,14 @@ class Currency extends Model
             'currencies.*.exchange' => 'required|numeric|min:0|max:999999.99|regex:/^\d+(\.\d{1,2})?$/',
         ];
     }
+    public static function listRules()
+    {
+        return [
+            'draft' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
+            'is_default' => 'nullable|boolean',
+            'is_deleted' => 'nullable|boolean',
+            'is_updated' => 'nullable|boolean',
+        ];
+    }
 }
