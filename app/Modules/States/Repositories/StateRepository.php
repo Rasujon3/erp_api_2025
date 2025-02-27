@@ -14,35 +14,7 @@ class StateRepository
 {
     public function all($request)
     {
-        $query = State::withTrashed()
-            ->leftJoin('countries', 'states.country_id', '=', 'countries.id')
-            ->select('states.*', 'countries.name as country_name');
-
-        if ($request->has('draft')) {
-            $query->where('states.draft', $request->input('draft'));
-        }
-        if ($request->has('is_active')) {
-            $query->where('states.is_active', $request->input('is_active'));
-        }
-        if ($request->has('is_default')) {
-            $query->where('states.is_default', $request->input('is_default'));
-        }
-        if ($request->has('is_deleted') && $request->input('is_deleted') == 1) {
-            $query->whereNotNull('states.deleted_at');
-        }
-        if (!$request->has('is_deleted') || $request->input('is_deleted') != 1) {
-            $query->whereNull('states.deleted_at');
-        }
-        if ($request->has('is_updated') && $request->input('is_updated') == 1) {
-            $query->whereNotNull('states.updated_at');
-        } elseif ($request->has('is_updated') && $request->input('is_updated') == 0) {
-            $query->whereNull('states.updated_at');
-        }
-        if ($request->has('country_id')) {
-            $query->where('states.country_id', $request->input('country_id'));
-        }
-
-        $list = $query->get();
+        $list = $this->list($request);
 
         $states = State::withTrashed()->get(); // Load all records including soft-deleted
 
@@ -62,8 +34,48 @@ class StateRepository
             'totalActive' => $totalActive,
             'totalUpdated' => $totalUpdated,
             'totalDeleted' => $totalDeleted,
+            'list_count' => count($list),
             'list' => $list,
         ];
+    }
+
+    public function list($request)
+    {
+        $query = State::withTrashed()
+            ->leftJoin('countries', 'states.country_id', '=', 'countries.id')
+            ->select('states.*', 'countries.name as country_name');
+
+        if ($request->has('draft')) {
+            $query->where('states.draft', $request->input('draft'));
+        }
+        if ($request->has('is_active')) {
+            $query->where('states.is_active', $request->input('is_active'));
+        }
+        if ($request->has('is_default')) {
+            $query->where('states.is_default', $request->input('is_default'));
+        }
+        if ($request->has('is_deleted')) {
+            if ($request->input('is_deleted') == 1) {
+                $query->whereNotNull('states.deleted_at');
+            } else {
+                $query->whereNull('states.deleted_at');
+            }
+        } else {
+            $query->whereNull('states.deleted_at');
+        }
+        if ($request->has('is_updated')) {
+            if ($request->input('is_updated') == 1) {
+                $query->whereNotNull('states.updated_at');
+            } else {
+                $query->whereNull('states.updated_at');
+            }
+        }
+        if ($request->has('country_id')) {
+            $query->where('states.country_id', $request->input('country_id'));
+        }
+
+        $list = $query->get();
+        return $list;
     }
     public function store(array $data): ?State
     {
