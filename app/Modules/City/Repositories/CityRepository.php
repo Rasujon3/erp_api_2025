@@ -42,7 +42,6 @@ class CityRepository
         $query = City::withTrashed()
             ->leftJoin('countries', 'cities.country_id', '=', 'countries.id')
             ->leftJoin('states', 'states.id', '=', 'cities.state_id')
-            ->whereNull('cities.deleted_at')
             ->select('cities.*', 'countries.name as country_name', 'states.name as state_name');
 
         if ($request->has('draft')) {

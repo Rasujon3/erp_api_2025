@@ -12,48 +12,7 @@ class AreaRepository
 {
     public function all($request)
     {
-        $query = Area::withTrashed()
-            ->leftJoin('countries', 'countries.id', '=', 'areas.country_id')
-            ->leftJoin('states', 'states.id', '=', 'areas.state_id')
-            ->leftJoin('cities', 'cities.id', '=', 'areas.city_id')
-            ->whereNull('areas.deleted_at')
-            ->select(
-                'areas.*',
-                'countries.name as country_name',
-                'states.name as state_name',
-                'cities.name as city_name'
-            );
-        if ($request->has('draft')) {
-            $query->where('areas.draft', $request->input('draft'));
-        }
-        if ($request->has('is_active')) {
-            $query->where('areas.is_active', $request->input('is_active'));
-        }
-        if ($request->has('is_default')) {
-            $query->where('areas.is_default', $request->input('is_default'));
-        }
-        if ($request->has('is_deleted') && $request->input('is_deleted') == 1) {
-            $query->whereNotNull('areas.deleted_at');
-        }
-        if (!$request->has('is_deleted') || $request->input('is_deleted') != 1) {
-            $query->whereNull('areas.deleted_at');
-        }
-        if ($request->has('is_updated') && $request->input('is_updated') == 1) {
-            $query->whereNotNull('areas.updated_at');
-        } elseif ($request->has('is_updated') && $request->input('is_updated') == 0) {
-            $query->whereNull('areas.updated_at');
-        }
-        if ($request->has('country_id')) {
-            $query->where('areas.country_id', $request->input('country_id'));
-        }
-        if ($request->has('state_id')) {
-            $query->where('areas.state_id', $request->input('state_id'));
-        }
-        if ($request->has('city_id')) {
-            $query->where('areas.city_id', $request->input('city_id'));
-        }
-
-        $list = $query->get();
+        $list = $this->list($request);
 
         $areas = Area::withTrashed()->get(); // Load all records including soft-deleted
 
@@ -73,8 +32,59 @@ class AreaRepository
             'totalActive' => $totalActive,
             'totalUpdated' => $totalUpdated,
             'totalDeleted' => $totalDeleted,
+            'list_count' => count($list),
             'list' => $list,
         ];
+    }
+    public function list($request)
+    {
+        $query = Area::withTrashed()
+            ->leftJoin('countries', 'countries.id', '=', 'areas.country_id')
+            ->leftJoin('states', 'states.id', '=', 'areas.state_id')
+            ->leftJoin('cities', 'cities.id', '=', 'areas.city_id')
+            ->select(
+                'areas.*',
+                'countries.name as country_name',
+                'states.name as state_name',
+                'cities.name as city_name'
+            );
+        if ($request->has('draft')) {
+            $query->where('areas.draft', $request->input('draft'));
+        }
+        if ($request->has('is_active')) {
+            $query->where('areas.is_active', $request->input('is_active'));
+        }
+        if ($request->has('is_default')) {
+            $query->where('areas.is_default', $request->input('is_default'));
+        }
+        if ($request->has('is_deleted')) {
+            if ($request->input('is_deleted') == 1) {
+                $query->whereNotNull('areas.deleted_at');
+            } else {
+                $query->whereNull('areas.deleted_at');
+            }
+        } else {
+            $query->whereNull('areas.deleted_at');
+        }
+        if ($request->has('is_updated')) {
+            if ($request->input('is_updated') == 1) {
+                $query->whereNotNull('areas.updated_at');
+            } else {
+                $query->whereNull('areas.updated_at');
+            }
+        }
+        if ($request->has('country_id')) {
+            $query->where('areas.country_id', $request->input('country_id'));
+        }
+        if ($request->has('state_id')) {
+            $query->where('areas.state_id', $request->input('state_id'));
+        }
+        if ($request->has('city_id')) {
+            $query->where('areas.city_id', $request->input('city_id'));
+        }
+
+        $list = $query->get();
+        return $list;
     }
     public function store(array $data): ?Area
     {
