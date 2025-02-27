@@ -2,8 +2,6 @@
 
 namespace App\Modules\Countries\Controllers;
 
-use App\Modules\Countries\Requests\CountryBulkRequest;
-use App\Modules\Countries\Requests\CountryImportRequest;
 use Exception;
 use Illuminate\Http\Request;
 use App\Modules\Countries\Repositories\CountryRepository;
@@ -27,10 +25,10 @@ class CountryController extends AppBaseController
         $this->countryRepository = $countryRepo;
         $this->countryDatatable = $countryDatatable;
     }
-    // Fetch all data
-    public function index()
+    // Fetch data
+    public function index(CountryRequest $request)
     {
-        $countries = $this->countryRepository->all();
+        $countries = $this->countryRepository->all($request);
         return $this->sendResponse($countries, 'Countries retrieved successfully.');
     }
     public function getSummary()
@@ -67,7 +65,6 @@ class CountryController extends AppBaseController
         }
         return $this->sendResponse($country, 'Country created successfully!');
     }
-
     // Update data
     public function update(CountryRequest $request, $country)
     {
@@ -87,7 +84,6 @@ class CountryController extends AppBaseController
         }
         return $this->sendResponse($country, 'Country updated successfully!');
     }
-
     // Delete data
     public function destroy($country)
     {
@@ -182,7 +178,6 @@ class CountryController extends AppBaseController
             return $this->sendError('Something went wrong!!! [CC-03]', 500);
         }
     }
-
     /**
      * Export a single country as an Excel file.
      */
@@ -211,7 +206,6 @@ class CountryController extends AppBaseController
             return $this->sendError('Something went wrong!!! [CC-04]', 500);
         }
     }
-
     /**
      * Generate an Excel file and return it as a response.
      */
@@ -247,7 +241,7 @@ class CountryController extends AppBaseController
         }
     }
     // bulk update
-    public function bulkUpdate(CountryBulkRequest $request)
+    public function bulkUpdate(CountryRequest $request)
     {
         $bulkUpdate = $this->countryRepository->bulkUpdate($request);
         if (!$bulkUpdate) {
@@ -256,7 +250,7 @@ class CountryController extends AppBaseController
         return $this->sendResponse([],'Country Bulk updated successfully!');
     }
     // import data
-    public function import(CountryImportRequest $request)
+    public function import(CountryRequest $request)
     {
         $import = $this->countryRepository->import($request);
         if (!$import) {

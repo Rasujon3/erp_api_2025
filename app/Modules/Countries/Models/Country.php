@@ -106,6 +106,16 @@ class Country extends Model
             'countries.*.flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
     }
+    public static function listRules()
+    {
+        return [
+            'draft' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
+            'is_default' => 'nullable|boolean',
+            'is_deleted' => 'nullable|boolean',
+            'is_updated' => 'nullable|boolean',
+        ];
+    }
 
     public function state() : hasMany
     {

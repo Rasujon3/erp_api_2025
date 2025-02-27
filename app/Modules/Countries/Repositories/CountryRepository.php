@@ -35,9 +35,31 @@ class CountryRepository
             'totalDeleted' => $totalDeleted,
         ];
     }
-    public function all()
+    public function all($request)
     {
-        $list = Country::cursor(); // Load all records without soft-deleted
+        $query = Country::withTrashed(); // Load all records including soft-deleted
+
+        if ($request->has('draft')) {
+            $query->where('draft', $request->input('draft'));
+        }
+        if ($request->has('is_active')) {
+            $query->where('is_active', $request->input('is_active'));
+        }
+        if ($request->has('is_default')) {
+            $query->where('is_default', $request->input('is_default'));
+        }
+        if ($request->has('is_deleted') && $request->input('is_deleted') == 1) {
+            $query->whereNotNull('deleted_at');
+        }
+        if (!$request->has('is_deleted') || $request->input('is_deleted') != 1) {
+            $query->whereNull('deleted_at');
+        }
+        if ($request->has('is_updated') && $request->input('is_updated') == 1) {
+            $query->whereNotNull('updated_at');
+        }
+
+        $list = $query->get();
+
         $countries = Country::withTrashed()->get(); // Load all records including soft-deleted
 
         $totalDraft = $countries->where('draft', true)->count();
@@ -46,16 +68,17 @@ class CountryRepository
         $totalDeleted = $countries->whereNotNull('deleted_at')->count();
         $totalUpdated = $countries->whereNotNull('updated_at')->count();
 
-        // Ensure totalCountries is the sum of totalDraft + totalInactive + totalActive
-        $totalCountries = $totalDraft + $totalInactive + $totalActive + $totalDeleted;
+        // Ensure totalCountries is without soft-deleted
+        $totalCountries = $countries->whereNull('deleted_at')->count();
+
         return [
-            'list' => $list,
             'totalCountries' => $totalCountries,
             'totalDraft' => $totalDraft,
             'totalInactive' => $totalInactive,
             'totalActive' => $totalActive,
             'totalUpdated' => $totalUpdated,
             'totalDeleted' => $totalDeleted,
+            'list' => $list,
         ];
     }
 

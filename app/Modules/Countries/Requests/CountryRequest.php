@@ -25,6 +25,21 @@ class CountryRequest extends FormRequest
      */
     public function rules()
     {
+        // Get the route name and apply null-safe operator
+        $routeName = $this->route()?->getName();
+
+        if ($routeName === 'countries.import') {
+            return Country::importRules();
+        }
+
+        if ($routeName === 'countries.bulkUpdate') {
+            return Country::bulkRules();
+        }
+
+        if ($routeName === 'countries.list') {
+            return Country::listRules();
+        }
+
         $countryId = $this->route('country') ?: null;
         return Country::rules($countryId);
     }
