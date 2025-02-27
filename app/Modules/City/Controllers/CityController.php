@@ -20,9 +20,9 @@ class CityController extends AppBaseController
         $this->cityDatatable = $cityDatatable;
     }
     // Fetch all data
-    public function index()
+    public function index(CityRequest $request)
     {
-        $statues = $this->cityRepository->all();
+        $statues = $this->cityRepository->all($request);
         return $this->sendResponse($statues, 'Cities retrieved successfully.');
     }
 
@@ -66,7 +66,7 @@ class CityController extends AppBaseController
         return $this->sendResponse($city, 'City updated successfully!');
     }
     // bulk update
-    public function bulkUpdate(CityBulkRequest $request)
+    public function bulkUpdate(CityRequest $request)
     {
         $bulkUpdate = $this->cityRepository->bulkUpdate($request);
         if (!$bulkUpdate) {

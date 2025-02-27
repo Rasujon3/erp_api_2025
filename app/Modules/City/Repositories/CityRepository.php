@@ -11,24 +11,54 @@ use Exception;
 
 class CityRepository
 {
-    public function all()
+    public function all($request)
     {
-        $list = City::leftJoin('countries', 'cities.country_id', '=', 'countries.id')
+        $query = City::withTrashed()
+            ->leftJoin('countries', 'cities.country_id', '=', 'countries.id')
             ->leftJoin('states', 'states.id', '=', 'cities.state_id')
             ->whereNull('cities.deleted_at')
-            ->select('cities.*', 'countries.name as country_name', 'states.name as state_name')
-            ->get(); // Load all records without soft-deleted
+            ->select('cities.*', 'countries.name as country_name', 'states.name as state_name');
+
+        if ($request->has('draft')) {
+            $query->where('cities.draft', $request->input('draft'));
+        }
+        if ($request->has('is_active')) {
+            $query->where('cities.is_active', $request->input('is_active'));
+        }
+        if ($request->has('is_default')) {
+            $query->where('cities.is_default', $request->input('is_default'));
+        }
+        if ($request->has('is_deleted') && $request->input('is_deleted') == 1) {
+            $query->whereNotNull('cities.deleted_at');
+        }
+        if (!$request->has('is_deleted') || $request->input('is_deleted') != 1) {
+            $query->whereNull('cities.deleted_at');
+        }
+        if ($request->has('is_updated') && $request->input('is_updated') == 1) {
+            $query->whereNotNull('cities.updated_at');
+        } elseif ($request->has('is_updated') && $request->input('is_updated') == 0) {
+            $query->whereNull('cities.updated_at');
+        }
+        if ($request->has('country_id')) {
+            $query->where('cities.country_id', $request->input('country_id'));
+        }
+        if ($request->has('state_id')) {
+            $query->where('cities.state_id', $request->input('state_id'));
+        }
+
+        $list = $query->get();
 
         $cities = City::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalDraft = $cities->where('draft', true)->count();
-        $totalInactive = $cities->where('is_active', false)->count();
-        $totalActive = $cities->where('is_active', true)->count();
+        $totalDraft = $cities->whereNull('deleted_at')->where('draft', true)->count();
+        $totalInactive = $cities->whereNull('deleted_at')->where('is_active', false)->count();
+        $totalActive = $cities->whereNull('deleted_at')->where('is_active', true)->count();
         $totalDeleted = $cities->whereNotNull('deleted_at')->count();
-        $totalUpdated = $cities->whereNotNull('updated_at')->count();
+        $totalUpdated = $cities->whereNull('deleted_at')->whereNotNull('updated_at')->count();
 
-        // Ensure totalCountries is the sum of totalDraft + totalInactive + totalActive
-        $totalCities = $totalDraft + $totalInactive + $totalActive + $totalDeleted;
+        // Ensure total count is without soft-deleted
+        $totalCities = $cities->whereNull('deleted_at')->count();
+
         return [
             'totalCities' => $totalCities,
             'totalDraft' => $totalDraft,

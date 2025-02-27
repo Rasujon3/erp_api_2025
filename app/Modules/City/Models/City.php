@@ -99,6 +99,24 @@ class City extends Model
             ],
         ];
     }
+    public static function listRules()
+    {
+        return [
+            'draft' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
+            'is_default' => 'nullable|boolean',
+            'is_deleted' => 'nullable|boolean',
+            'is_updated' => 'nullable|boolean',
+            'country_id' => [
+                'nullable',
+                Rule::exists('countries', 'id')->whereNull('deleted_at')
+            ],
+            'state_id' => [
+                'nullable',
+                Rule::exists('states', 'id')->whereNull('deleted_at')
+            ],
+        ];
+    }
     public function country() : belongsTo
     {
         return $this->belongsTo(Country::class,'country_id');
