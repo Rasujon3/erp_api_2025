@@ -48,16 +48,21 @@ class CountryRepository
         if ($request->has('is_default')) {
             $query->where('is_default', $request->input('is_default'));
         }
-        if ($request->has('is_deleted') && $request->input('is_deleted') == 1) {
-            $query->whereNotNull('deleted_at');
-        }
-        if (!$request->has('is_deleted') || $request->input('is_deleted') != 1) {
+        if ($request->has('is_deleted')) {
+            if ($request->input('is_deleted') == 1) {
+                $query->whereNotNull('deleted_at');
+            } else {
+                $query->whereNull('deleted_at');
+            }
+        } else {
             $query->whereNull('deleted_at');
         }
-        if ($request->has('is_updated') && $request->input('is_updated') == 1) {
-            $query->whereNotNull('updated_at');
-        } elseif (!$request->has('is_updated') || $request->input('is_updated') != 1) {
-            $query->whereNull('updated_at');
+        if ($request->has('is_updated')) {
+            if ($request->input('is_updated') == 1) {
+                $query->whereNotNull('updated_at');
+            } else {
+                $query->whereNull('updated_at');
+            }
         }
 
         $list = $query->get();
