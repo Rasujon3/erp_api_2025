@@ -62,11 +62,11 @@ class CountryRepository
 
         $countries = Country::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalDraft = $countries->where('draft', true)->count();
-        $totalInactive = $countries->where('is_active', false)->count();
-        $totalActive = $countries->where('is_active', true)->count();
+        $totalDraft = $countries->whereNull('deleted_at')->where('draft', true)->count();
+        $totalInactive = $countries->whereNull('deleted_at')->where('is_active', false)->count();
+        $totalActive = $countries->whereNull('deleted_at')->where('is_active', true)->count();
         $totalDeleted = $countries->whereNotNull('deleted_at')->count();
-        $totalUpdated = $countries->whereNotNull('updated_at')->count();
+        $totalUpdated = $countries->whereNull('deleted_at')->whereNotNull('updated_at')->count();
 
         // Ensure totalCountries is without soft-deleted
         $totalCountries = $countries->whereNull('deleted_at')->count();
