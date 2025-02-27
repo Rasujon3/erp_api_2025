@@ -56,6 +56,8 @@ class CountryRepository
         }
         if ($request->has('is_updated') && $request->input('is_updated') == 1) {
             $query->whereNotNull('updated_at');
+        } elseif (!$request->has('is_updated') || $request->input('is_updated') != 1) {
+            $query->whereNull('updated_at');
         }
 
         $list = $query->get();
