@@ -32,7 +32,6 @@ class AreaRepository
             'totalActive' => $totalActive,
             'totalUpdated' => $totalUpdated,
             'totalDeleted' => $totalDeleted,
-            'list_count' => count($list),
             'list' => $list,
         ];
     }
