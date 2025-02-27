@@ -13,40 +13,7 @@ class CityRepository
 {
     public function all($request)
     {
-        $query = City::withTrashed()
-            ->leftJoin('countries', 'cities.country_id', '=', 'countries.id')
-            ->leftJoin('states', 'states.id', '=', 'cities.state_id')
-            ->whereNull('cities.deleted_at')
-            ->select('cities.*', 'countries.name as country_name', 'states.name as state_name');
-
-        if ($request->has('draft')) {
-            $query->where('cities.draft', $request->input('draft'));
-        }
-        if ($request->has('is_active')) {
-            $query->where('cities.is_active', $request->input('is_active'));
-        }
-        if ($request->has('is_default')) {
-            $query->where('cities.is_default', $request->input('is_default'));
-        }
-        if ($request->has('is_deleted') && $request->input('is_deleted') == 1) {
-            $query->whereNotNull('cities.deleted_at');
-        }
-        if (!$request->has('is_deleted') || $request->input('is_deleted') != 1) {
-            $query->whereNull('cities.deleted_at');
-        }
-        if ($request->has('is_updated') && $request->input('is_updated') == 1) {
-            $query->whereNotNull('cities.updated_at');
-        } elseif ($request->has('is_updated') && $request->input('is_updated') == 0) {
-            $query->whereNull('cities.updated_at');
-        }
-        if ($request->has('country_id')) {
-            $query->where('cities.country_id', $request->input('country_id'));
-        }
-        if ($request->has('state_id')) {
-            $query->where('cities.state_id', $request->input('state_id'));
-        }
-
-        $list = $query->get();
+        $list = $this->list($request);
 
         $cities = City::withTrashed()->get(); // Load all records including soft-deleted
 
@@ -68,6 +35,50 @@ class CityRepository
             'totalDeleted' => $totalDeleted,
             'list' => $list,
         ];
+    }
+
+    public function list($request)
+    {
+        $query = City::withTrashed()
+            ->leftJoin('countries', 'cities.country_id', '=', 'countries.id')
+            ->leftJoin('states', 'states.id', '=', 'cities.state_id')
+            ->whereNull('cities.deleted_at')
+            ->select('cities.*', 'countries.name as country_name', 'states.name as state_name');
+
+        if ($request->has('draft')) {
+            $query->where('cities.draft', $request->input('draft'));
+        }
+        if ($request->has('is_active')) {
+            $query->where('cities.is_active', $request->input('is_active'));
+        }
+        if ($request->has('is_default')) {
+            $query->where('cities.is_default', $request->input('is_default'));
+        }
+        if ($request->has('is_deleted')) {
+            if ($request->input('is_deleted') == 1) {
+                $query->whereNotNull('cities.deleted_at');
+            } else {
+                $query->whereNull('cities.deleted_at');
+            }
+        } else {
+            $query->whereNull('cities.deleted_at');
+        }
+        if ($request->has('is_updated')) {
+            if ($request->input('is_updated') == 1) {
+                $query->whereNotNull('cities.updated_at');
+            } else {
+                $query->whereNull('cities.updated_at');
+            }
+        }
+        if ($request->has('country_id')) {
+            $query->where('cities.country_id', $request->input('country_id'));
+        }
+        if ($request->has('state_id')) {
+            $query->where('cities.state_id', $request->input('state_id'));
+        }
+
+        $list = $query->get();
+        return $list;
     }
     public function store(array $data): ?City
     {
