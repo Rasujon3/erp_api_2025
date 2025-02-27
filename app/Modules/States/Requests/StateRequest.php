@@ -4,7 +4,6 @@ namespace App\Modules\States\Requests;
 
 use App\Modules\States\Models\State;
 use Illuminate\Foundation\Http\FormRequest;
-use App\Modules\Admin\Models\Country; // Import the Currency model
 
 class StateRequest extends FormRequest
 {
@@ -26,6 +25,20 @@ class StateRequest extends FormRequest
      */
     public function rules()
     {
+        // Get the route name and apply null-safe operator
+        $routeName = $this->route()?->getName();
+
+        if ($routeName === 'states.import') {
+            //return State::importRules();
+        }
+
+        if ($routeName === 'states.bulkUpdate') {
+            return State::bulkRules();
+        }
+
+        if ($routeName === 'states.list') {
+            return State::listRules();
+        }
         $stateId = $this->route('state') ?: null;
         return State::rules($stateId);
     }

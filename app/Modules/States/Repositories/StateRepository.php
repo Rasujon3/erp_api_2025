@@ -12,23 +12,49 @@ use Exception;
 
 class StateRepository
 {
-    public function all()
+    public function all($request)
     {
-        $list = State::leftJoin('countries', 'states.country_id', '=', 'countries.id')
-            ->whereNull('states.deleted_at')
-            ->select('states.*', 'countries.name as country_name')
-            ->get(); // Load all records without soft-deleted
+        $query = State::withTrashed()
+            ->leftJoin('countries', 'states.country_id', '=', 'countries.id')
+            ->select('states.*', 'countries.name as country_name');
 
-        $countries = State::withTrashed()->get(); // Load all records including soft-deleted
+        if ($request->has('draft')) {
+            $query->where('states.draft', $request->input('draft'));
+        }
+        if ($request->has('is_active')) {
+            $query->where('states.is_active', $request->input('is_active'));
+        }
+        if ($request->has('is_default')) {
+            $query->where('states.is_default', $request->input('is_default'));
+        }
+        if ($request->has('is_deleted') && $request->input('is_deleted') == 1) {
+            $query->whereNotNull('states.deleted_at');
+        }
+        if (!$request->has('is_deleted') || $request->input('is_deleted') != 1) {
+            $query->whereNull('states.deleted_at');
+        }
+        if ($request->has('is_updated') && $request->input('is_updated') == 1) {
+            $query->whereNotNull('states.updated_at');
+        } elseif ($request->has('is_updated') && $request->input('is_updated') == 0) {
+            $query->whereNull('states.updated_at');
+        }
+        if ($request->has('country_id')) {
+            $query->where('states.country_id', $request->input('country_id'));
+        }
 
-        $totalDraft = $countries->where('draft', true)->count();
-        $totalInactive = $countries->where('is_active', false)->count();
-        $totalActive = $countries->where('is_active', true)->count();
-        $totalDeleted = $countries->whereNotNull('deleted_at')->count();
-        $totalUpdated = $countries->whereNotNull('updated_at')->count();
+        $list = $query->get();
 
-        // Ensure totalCountries is the sum of totalDraft + totalInactive + totalActive
-        $totalStates = $totalDraft + $totalInactive + $totalActive + $totalDeleted;
+        $states = State::withTrashed()->get(); // Load all records including soft-deleted
+
+        $totalDraft = $states->whereNull('deleted_at')->where('draft', true)->count();
+        $totalInactive = $states->whereNull('deleted_at')->where('is_active', false)->count();
+        $totalActive = $states->whereNull('deleted_at')->where('is_active', true)->count();
+        $totalDeleted = $states->whereNotNull('deleted_at')->count();
+        $totalUpdated = $states->whereNull('deleted_at')->whereNotNull('updated_at')->count();
+
+        // Ensure totalCountries is without soft-deleted
+        $totalStates = $states->whereNull('deleted_at')->count();
+
         return [
             'totalStates' => $totalStates,
             'totalDraft' => $totalDraft,

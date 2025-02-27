@@ -5,7 +5,6 @@ namespace App\Modules\States\Controllers;
 use App\Http\Controllers\AppBaseController;
 use App\Modules\States\Queries\StateDatatable;
 use App\Modules\States\Repositories\StateRepository;
-use App\Modules\States\Requests\StateBulkRequest;
 use App\Modules\States\Requests\StateRequest;
 
 class StateController extends AppBaseController
@@ -20,9 +19,9 @@ class StateController extends AppBaseController
     }
 
     // Fetch all data
-    public function index()
+    public function index(StateRequest $request)
     {
-        $statues = $this->stateRepository->all();
+        $statues = $this->stateRepository->all($request);
         return $this->sendResponse($statues, 'States retrieved successfully.');
     }
 
@@ -66,7 +65,7 @@ class StateController extends AppBaseController
         return $this->sendResponse($state, 'State updated successfully!');
     }
     // bulk update
-    public function bulkUpdate(StateBulkRequest $request)
+    public function bulkUpdate(StateRequest $request)
     {
         $bulkUpdate = $this->stateRepository->bulkUpdate($request);
         if (!$bulkUpdate) {
