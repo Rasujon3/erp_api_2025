@@ -2,15 +2,8 @@
 
 namespace App\Modules\Areas\Requests;
 
-use App\Http\Controllers\AppBaseController;
 use App\Modules\Areas\Models\Area;
-use App\Modules\City\Models\City;
-use App\Modules\States\Models\State;
 use Illuminate\Foundation\Http\FormRequest;
-use App\Modules\Admin\Models\Country;
-use Illuminate\Support\Facades\Log;
-
-// Import the Currency model
 
 class AreaRequest extends FormRequest
 {
@@ -32,6 +25,20 @@ class AreaRequest extends FormRequest
      */
     public function rules()
     {
+        // Get the route name and apply null-safe operator
+        $routeName = $this->route()?->getName();
+
+        if ($routeName === 'areas.import') {
+            //return Area::importRules();
+        }
+
+        if ($routeName === 'areas.bulkUpdate') {
+            return Area::bulkRules();
+        }
+
+        if ($routeName === 'areas.list') {
+            return Area::listRules();
+        }
         $areaId = $this->route('area') ?: null;
         return Area::rules($areaId);
     }

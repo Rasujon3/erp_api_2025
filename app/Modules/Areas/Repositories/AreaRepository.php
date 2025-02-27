@@ -10,9 +10,10 @@ use Exception;
 
 class AreaRepository
 {
-    public function all()
+    public function all($request)
     {
-        $list = Area::leftJoin('countries', 'countries.id', '=', 'areas.country_id')
+        $query = Area::withTrashed()
+            ->leftJoin('countries', 'countries.id', '=', 'areas.country_id')
             ->leftJoin('states', 'states.id', '=', 'areas.state_id')
             ->leftJoin('cities', 'cities.id', '=', 'areas.city_id')
             ->whereNull('areas.deleted_at')
@@ -21,19 +22,50 @@ class AreaRepository
                 'countries.name as country_name',
                 'states.name as state_name',
                 'cities.name as city_name'
-            )
-            ->get(); // Load all records without soft-deleted
+            );
+        if ($request->has('draft')) {
+            $query->where('areas.draft', $request->input('draft'));
+        }
+        if ($request->has('is_active')) {
+            $query->where('areas.is_active', $request->input('is_active'));
+        }
+        if ($request->has('is_default')) {
+            $query->where('areas.is_default', $request->input('is_default'));
+        }
+        if ($request->has('is_deleted') && $request->input('is_deleted') == 1) {
+            $query->whereNotNull('areas.deleted_at');
+        }
+        if (!$request->has('is_deleted') || $request->input('is_deleted') != 1) {
+            $query->whereNull('areas.deleted_at');
+        }
+        if ($request->has('is_updated') && $request->input('is_updated') == 1) {
+            $query->whereNotNull('areas.updated_at');
+        } elseif ($request->has('is_updated') && $request->input('is_updated') == 0) {
+            $query->whereNull('areas.updated_at');
+        }
+        if ($request->has('country_id')) {
+            $query->where('areas.country_id', $request->input('country_id'));
+        }
+        if ($request->has('state_id')) {
+            $query->where('areas.state_id', $request->input('state_id'));
+        }
+        if ($request->has('city_id')) {
+            $query->where('areas.city_id', $request->input('city_id'));
+        }
+
+        $list = $query->get();
 
         $areas = Area::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalDraft = $areas->where('draft', true)->count();
-        $totalInactive = $areas->where('is_active', false)->count();
-        $totalActive = $areas->where('is_active', true)->count();
+        $totalDraft = $areas->whereNull('deleted_at')->where('draft', true)->count();
+        $totalInactive = $areas->whereNull('deleted_at')->where('is_active', false)->count();
+        $totalActive = $areas->whereNull('deleted_at')->where('is_active', true)->count();
         $totalDeleted = $areas->whereNotNull('deleted_at')->count();
-        $totalUpdated = $areas->whereNotNull('updated_at')->count();
+        $totalUpdated = $areas->whereNull('deleted_at')->whereNotNull('updated_at')->count();
 
-        // Ensure totalCountries is the sum of totalDraft + totalInactive + totalActive
-        $totalAreas = $totalDraft + $totalInactive + $totalActive + $totalDeleted;
+        // Ensure total count is without soft-deleted
+        $totalAreas = $areas->whereNull('deleted_at')->count();
+
         return [
             'totalAreas' => $totalAreas,
             'totalDraft' => $totalDraft,

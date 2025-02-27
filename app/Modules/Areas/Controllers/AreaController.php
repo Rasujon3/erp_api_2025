@@ -4,9 +4,7 @@ namespace App\Modules\Areas\Controllers;
 
 use App\Modules\Areas\Queries\AreaDatatable;
 use App\Modules\Areas\Repositories\AreaRepository;
-use App\Modules\Areas\Requests\AreaBulkRequest;
 use App\Modules\Areas\Requests\AreaRequest;
-use Illuminate\Http\Request;
 use App\Http\Controllers\AppBaseController;
 
 class AreaController extends AppBaseController
@@ -20,9 +18,9 @@ class AreaController extends AppBaseController
         $this->areaDatatable = $areaDatatable;
     }
     // Fetch all data
-    public function index()
+    public function index(AreaRequest $request)
     {
-        $data = $this->areaRepository->all();
+        $data = $this->areaRepository->all($request);
         return $this->sendResponse($data, 'Areas retrieved successfully.');
     }
 
@@ -60,7 +58,7 @@ class AreaController extends AppBaseController
         return $this->sendResponse($area, 'Area updated successfully!');
     }
     // bulk update
-    public function bulkUpdate(AreaBulkRequest $request)
+    public function bulkUpdate(AreaRequest $request)
     {
         $bulkUpdate = $this->areaRepository->bulkUpdate($request);
         if (!$bulkUpdate) {
