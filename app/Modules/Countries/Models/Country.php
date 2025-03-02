@@ -2,6 +2,7 @@
 
 namespace App\Modules\Countries\Models;
 
+use App\Modules\AdminGroups\Models\AdminGroup;
 use App\Modules\Areas\Models\Area;
 use App\Modules\City\Models\City;
 use App\Modules\States\Models\State;
@@ -127,6 +128,10 @@ class Country extends Model
     }
     public function area() : hasMany
     {
-        return $this->hasMany(Area::class, 'city_id');
+        return $this->hasMany(Area::class, 'country_id');
+    }
+    public function adminGroup() : hasMany
+    {
+        return $this->hasMany(AdminGroup::class, 'country_id');
     }
 }
