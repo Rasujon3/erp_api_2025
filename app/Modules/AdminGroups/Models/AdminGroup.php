@@ -27,6 +27,7 @@ class AdminGroup extends Model
         'is_deleted',
         'drafted_at',
         'flag',
+        'group_name',
     ];
 
     public static function rules($adminGroupId = null)
@@ -53,6 +54,7 @@ class AdminGroup extends Model
             'is_deleted' => 'boolean',
             'drafted_at' => 'nullable|date',
             'flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'group_name' => 'nullable|string|max:191',
         ];
     }
     public static function bulkRules()
@@ -106,6 +108,7 @@ class AdminGroup extends Model
                 'required',
                 Rule::exists('countries', 'id')->whereNull('deleted_at')
             ],
+            'adminGroups.*.group_name' => 'nullable|string|max:191',
         ];
     }
     public static function listRules()

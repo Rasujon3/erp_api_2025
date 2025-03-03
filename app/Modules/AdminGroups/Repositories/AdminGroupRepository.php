@@ -227,6 +227,7 @@ class AdminGroupRepository
                     'english' => $data['english'] ?? $adminGroup->english,
                     'arabic' => $data['arabic'] ?? $adminGroup->arabic,
                     'bengali' => $data['bengali'] ?? $adminGroup->bengali,
+                    'group_name' => $data['group_name'] ?? $adminGroup->group_name,
                     'is_default' => $data['is_default'] ?? $adminGroup->is_default,
                     'is_draft' => $data['is_draft'] ?? $adminGroup->is_draft,
                     'drafted_at' => $data['is_draft'] == 1 ? now() : $adminGroup->drafted_at,
