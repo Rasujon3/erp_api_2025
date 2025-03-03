@@ -26,48 +26,38 @@ class Allowance extends Model
     {
         return [
             'amount' => 'required|numeric|min:0',
-            'approved_date' => 'required|date',
-            'repayment_from' => 'required|date|after_or_equal:approved_date',
-            'interest_percentage' => 'required|numeric|min:0',
-            'installment_period' => 'required|integer|min:1',
-            'repayment_amount' => 'required|numeric|min:0',
-            'installment' => 'required|numeric|min:0',
-            'status' => 'required|in:active,inactive',
+            'description' => 'nullable|string|max:191',
+            'posted' => 'nullable|boolean',
             'date'=>"required|date",
             'employee_id' => [
                 'required',
                 Rule::exists('employees', 'id')->whereNull('deleted_at')
             ],
-            'permitted_by' => [
+            'allowance_type_id' => [
                 'required',
-                Rule::exists('employees', 'id')->whereNull('deleted_at')
+                Rule::exists('allowance_types', 'id')->whereNull('deleted_at')
             ],
         ];
     }
     public static function bulkRules()
     {
         return [
-            'loans' => 'required|array|min:1',
-            'loans.*.id' => [
+            'allowances' => 'required|array|min:1',
+            'allowances.*.id' => [
                 'required',
-                Rule::exists('loan', 'id')->whereNull('deleted_at')
+                Rule::exists('allowances', 'id')->whereNull('deleted_at')
             ],
-            'loans.*.amount' => 'required|numeric|min:0',
-            'loans.*.approved_date' => 'required|date',
-            'loans.*.repayment_from' => 'required|date|after_or_equal:approved_date',
-            'loans.*.interest_percentage' => 'required|numeric|min:0',
-            'loans.*.installment_period' => 'required|integer|min:1',
-            'loans.*.repayment_amount' => 'required|numeric|min:0',
-            'loans.*.installment' => 'required|numeric|min:0',
-            'loans.*.status' => 'required|in:active,inactive',
-            'loans.*.date'=>"required|date",
-            'loans.*.employee_id' => [
+            'allowances.*.amount' => 'required|numeric|min:0',
+            'allowances.*.description' => 'nullable|string|max:191',
+            'allowances.*.posted' => 'nullable|boolean',
+            'allowances.*.date'=>"required|date",
+            'allowances.*.employee_id' => [
                 'required',
                 Rule::exists('employees', 'id')->whereNull('deleted_at')
             ],
-            'loans.*.permitted_by' => [
+            'allowances.*.allowance_type_id' => [
                 'required',
-                Rule::exists('employees', 'id')->whereNull('deleted_at')
+                Rule::exists('allowance_types', 'id')->whereNull('deleted_at')
             ],
         ];
     }

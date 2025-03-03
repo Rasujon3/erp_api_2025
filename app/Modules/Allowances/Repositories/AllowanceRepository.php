@@ -3,8 +3,8 @@
 namespace App\Modules\Allowances\Repositories;
 
 use App\Helpers\ActivityLogger;
+use App\Modules\Allowances\Models\Allowance;
 use App\Modules\Areas\Models\Area;
-use App\Modules\Loans\Models\Loan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -15,16 +15,16 @@ class AllowanceRepository
     {
         $list = $this->list($request);
 
-        $loans = Loan::withTrashed()->get(); // Load all records including soft-deleted
+        $allowances = Allowance::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalDraft = $loans->whereNull('deleted_at')->where('draft', true)->count();
-        $totalInactive = $loans->whereNull('deleted_at')->where('is_active', false)->count();
-        $totalActive = $loans->whereNull('deleted_at')->where('is_active', true)->count();
-        $totalDeleted = $loans->whereNotNull('deleted_at')->count();
-        $totalUpdated = $loans->whereNull('deleted_at')->whereNotNull('updated_at')->count();
+        $totalDraft = $allowances->whereNull('deleted_at')->where('draft', true)->count();
+        $totalInactive = $allowances->whereNull('deleted_at')->where('is_active', false)->count();
+        $totalActive = $allowances->whereNull('deleted_at')->where('is_active', true)->count();
+        $totalDeleted = $allowances->whereNotNull('deleted_at')->count();
+        $totalUpdated = $allowances->whereNull('deleted_at')->whereNotNull('updated_at')->count();
 
         // Ensure total count is without soft-deleted
-        $totalLoans = $loans->whereNull('deleted_at')->count();
+        $totalLoans = $allowances->whereNull('deleted_at')->count();
 
         return [
             'totalLoans' => $totalLoans,
@@ -39,47 +39,47 @@ class AllowanceRepository
 
     public function list($request)
     {
-        $query = Loan::withTrashed()
-            ->leftJoin('employees as ei', 'loan.employee_id', '=', 'ei.id')
-            ->leftJoin('employees as py', 'loan.permitted_by', '=', 'py.id')
-            ->select('loan.*', 'ei.name as employee_name', 'py.name as permitted_by_name');
+        $query = Allowance::withTrashed()
+            ->leftJoin('employees as ei', 'allowances.employee_id', '=', 'ei.id')
+            ->leftJoin('allowance_types as at', 'allowances.allowance_type_id', '=', 'at.id')
+            ->select('allowances.*', 'ei.name as employee_name', 'at.name as allowance_types_name');
 
         if ($request->has('draft')) {
-            $query->where('loan.draft', $request->input('draft'));
+            $query->where('allowances.draft', $request->input('draft'));
         }
         if ($request->has('is_active')) {
-            $query->where('loan.is_active', $request->input('is_active'));
+            $query->where('allowances.is_active', $request->input('is_active'));
         }
         if ($request->has('is_default')) {
-            $query->where('loan.is_default', $request->input('is_default'));
+            $query->where('allowances.is_default', $request->input('is_default'));
         }
         if ($request->has('is_deleted')) {
             if ($request->input('is_deleted') == 1) {
-                $query->whereNotNull('loan.deleted_at');
+                $query->whereNotNull('allowances.deleted_at');
             } else {
-                $query->whereNull('loan.deleted_at');
+                $query->whereNull('allowances.deleted_at');
             }
         } else {
-            $query->whereNull('loan.deleted_at');
+            $query->whereNull('allowances.deleted_at');
         }
         if ($request->has('is_updated')) {
             if ($request->input('is_updated') == 1) {
-                $query->whereNotNull('loan.updated_at');
+                $query->whereNotNull('allowances.updated_at');
             } else {
-                $query->whereNull('loan.updated_at');
+                $query->whereNull('allowances.updated_at');
             }
         }
         if ($request->has('country_id')) {
-            $query->where('loan.country_id', $request->input('country_id'));
+            $query->where('allowances.country_id', $request->input('country_id'));
         }
         if ($request->has('state_id')) {
-            $query->where('loan.state_id', $request->input('state_id'));
+            $query->where('allowances.state_id', $request->input('state_id'));
         }
 
         $list = $query->get();
         return $list;
     }
-    public function store(array $data): ?Loan
+    public function store(array $data): ?Allowance
     {
         DB::beginTransaction();
         try {
@@ -90,23 +90,23 @@ class AllowanceRepository
             }
             */
 
-            // Create the Loan record in the database
-            $loan = Loan::create($data);
+            // Create the Allowance record in the database
+            $allowance = Allowance::create($data);
 
             // Log activity
-            ActivityLogger::log('Loan Add', 'Loan', 'Loan', $loan->id, [
-                'employee_id' => $loan->employee_id ?? '',
-                'amount' => $loan->amount ?? ''
+            ActivityLogger::log('Allowance Add', 'Allowance', 'Allowance', $allowance->id, [
+                'employee_id' => $allowance->employee_id ?? '',
+                'amount' => $allowance->amount ?? ''
             ]);
 
             DB::commit();
 
-            return $loan;
+            return $allowance;
         } catch (Exception $e) {
             DB::rollBack();
 
             // Log the error
-            Log::error('Error in storing Loan: ' , [
+            Log::error('Error in storing Allowance: ' , [
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
                 'line' => $e->getLine(),
@@ -117,7 +117,7 @@ class AllowanceRepository
         }
     }
 
-    public function update(Loan $loan, array $data): ?Loan
+    public function update(Allowance $allowance, array $data): ?Allowance
     {
         DB::beginTransaction();
         try {
@@ -129,25 +129,25 @@ class AllowanceRepository
             */
 
             // Perform the update
-            $loan->update($data);
+            $allowance->update($data);
             // Soft delete the record if 'is_delete' is 1
             if (!empty($data['is_delete']) && $data['is_delete'] == 1) {
-                $this->delete($loan);
+                $this->delete($allowance);
             } else {
                 // Log activity for update
-                ActivityLogger::log('Loan Updated', 'Loan', 'Loan', $loan->id, [
-                    'employee_id' => $loan->employee_id ?? '',
-                    'amount' => $loan->amount ?? ''
+                ActivityLogger::log('Allowance Updated', 'Allowance', 'Allowance', $allowance->id, [
+                    'employee_id' => $allowance->employee_id ?? '',
+                    'amount' => $allowance->amount ?? ''
                 ]);
             }
 
             DB::commit();
-            return $loan;
+            return $allowance;
         } catch (Exception $e) {
             DB::rollBack();
 
             // Log the error
-            Log::error('Error updating Loan: ' , [
+            Log::error('Error updating Allowance: ' , [
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
                 'line' => $e->getLine(),
@@ -157,20 +157,20 @@ class AllowanceRepository
             return null;
         }
     }
-    public function delete(Loan $loan): bool
+    public function delete(Allowance $allowance): bool
     {
         DB::beginTransaction();
         try {
             // Perform soft delete
-            $deleted = $loan->delete();
+            $deleted = $allowance->delete();
             if (!$deleted) {
                 DB::rollBack();
                 return false;
             }
             // Log activity after successful deletion
-            ActivityLogger::log('Loan Deleted', 'Loan', 'Loan', $loan->id, [
-                'employee_id' => $loan->employee_id ?? '',
-                'amount' => $loan->amount ?? ''
+            ActivityLogger::log('Allowance Deleted', 'Allowance', 'Allowance', $allowance->id, [
+                'employee_id' => $allowance->employee_id ?? '',
+                'amount' => $allowance->amount ?? ''
             ]);
             DB::commit();
             return true;
@@ -178,8 +178,8 @@ class AllowanceRepository
             DB::rollBack();
 
             // Log error
-            Log::error('Error deleting Loan: ' , [
-                'state_id' => $loan->id,
+            Log::error('Error deleting Allowance: ' , [
+                'state_id' => $allowance->id,
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
                 'line' => $e->getLine(),
@@ -191,48 +191,41 @@ class AllowanceRepository
     }
     public function find($id)
     {
-        return Loan::find($id);
+        return Allowance::find($id);
     }
     public function getData($id)
     {
-        $loan = Loan::leftJoin('employees as ei', 'loan.employee_id', '=', 'ei.id')
-            ->leftJoin('employees as py', 'loan.permitted_by', '=', 'py.id')
-            ->where('loan.id', $id)
-            ->select('loan.*', 'ei.name as employee_name', 'py.name as permitted_by_name')
+        $allowance = Allowance::leftJoin('employees as ei', 'allowances.employee_id', '=', 'ei.id')
+            ->leftJoin('allowance_types as at', 'allowances.allowance_type_id', '=', 'at.id')
+            ->where('allowances.id', $id)
+            ->select('allowances.*', 'ei.name as employee_name', 'at.name as allowance_types_name')
             ->first();
-        return $loan;
+        return $allowance;
     }
     public function bulkUpdate($request)
     {
         DB::beginTransaction();
         try {
-            foreach ($request->loans as $data) {
-                $loan = Loan::find($data['id']);
+            foreach ($request->allowances as $data) {
+                $allowance = Allowance::find($data['id']);
 
-                if (!$loan) {
+                if (!$allowance) {
                     continue; // Skip if not found
                 }
 
                 // Update state details
-                $loan->update([
-                    'employee_id' => $data['employee_id'] ?? $loan->employee_id,
-                    'permitted_by' => $data['permitted_by'] ?? $loan->permitted_by,
-                    'description' => $data['description'] ?? $loan->description,
-                    'amount' => $data['amount'] ?? $loan->amount,
-                    'approved_date' => $data['approved_date'] ?? $loan->approved_date,
-                    'repayment_from' => $data['repayment_from'] ?? $loan->repayment_from,
-                    'interest_percentage' => $data['interest_percentage'] ?? $loan->interest_percentage,
-                    'installment_period' => $data['installment_period'] ?? $loan->installment_period,
-                    'repayment_amount' => $data['repayment_amount'] ?? $loan->repayment_amount,
-                    'installment' => $data['installment'] ?? $loan->installment,
-                    'status' => $data['status'] ?? $loan->status,
-                    'date' => $data['date'] ?? $loan->date,
-                    'posted' => $data['posted'] ?? $loan->posted,
+                $allowance->update([
+                    'employee_id' => $data['employee_id'] ?? $allowance->employee_id,
+                    'allowance_type_id' => $data['allowance_type_id'] ?? $allowance->allowance_type_id,
+                    'description' => $data['description'] ?? $allowance->description,
+                    'amount' => $data['amount'] ?? $allowance->amount,
+                    'date' => $data['date'] ?? $allowance->date,
+                    'posted' => $data['posted'] ?? $allowance->posted,
                 ]);
                 // Log activity for update
-                ActivityLogger::log('Loan Updated', 'Loan', 'Loan', $loan->id, [
-                    'employee_id' => $loan->employee_id ?? '',
-                    'amount' => $loan->amount ?? ''
+                ActivityLogger::log('Allowance Updated', 'Allowance', 'Allowance', $allowance->id, [
+                    'employee_id' => $allowance->employee_id ?? '',
+                    'amount' => $allowance->amount ?? ''
                 ]);
             }
 
@@ -242,7 +235,7 @@ class AllowanceRepository
             DB::rollBack();
 
             // Log the error
-            Log::error('Error Bulk updating Loan: ', [
+            Log::error('Error Bulk updating Allowance: ', [
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
                 'line' => $e->getLine(),
