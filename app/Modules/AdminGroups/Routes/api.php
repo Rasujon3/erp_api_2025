@@ -10,4 +10,5 @@ Route::prefix('admin-groups')->group(function () {
     Route::put('/bulk-update', [AdminGroupController::class, 'bulkUpdate'])->name('admin_groups.bulkUpdate'); // Bulk update
     Route::get('/view/{adminGroup}', [AdminGroupController::class, 'show'])->name('admin_groups.view'); // View data
     Route::put('/update/{adminGroup}', [AdminGroupController::class, 'update'])->name('admin_groups.update'); // Update data
+    Route::get('/admin-group-template', [AdminGroupController::class, 'templateList'])->name('admin_groups.templateList'); // template data
 });

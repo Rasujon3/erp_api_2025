@@ -62,4 +62,10 @@ class AdminGroupController extends AppBaseController
         }
         return $this->sendResponse([],'Admin Group Bulk updated successfully!');
     }
+    // template data
+    public function templateList()
+    {
+        $templateList = $this->adminGroupRepository->templateList();
+        return $this->sendResponse($templateList,'Admin Group Template retrieved successfully!');
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Modules\AdminGroups\Repositories;
 
 use App\Helpers\ActivityLogger;
 use App\Modules\AdminGroups\Models\AdminGroup;
+use App\Modules\AdminGroups\Models\AdminGroupTemplate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -323,5 +324,10 @@ class AdminGroupRepository
                 return false;
             }
         }
+    }
+    public function templateList()
+    {
+        $templateList = AdminGroupTemplate::get();
+        return $templateList;
     }
 }
