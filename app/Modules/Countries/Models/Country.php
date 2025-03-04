@@ -130,8 +130,14 @@ class Country extends Model
     {
         return $this->hasMany(Area::class, 'country_id');
     }
-    public function adminGroup() : hasMany
+    public function adminGroups()
     {
-        return $this->hasMany(AdminGroup::class, 'country_id');
+        return $this->belongsToMany(
+            AdminGroup::class,
+            'group_countries',
+            'country_id',
+            'admin_group_id'
+        )
+            ->withTimestamps();
     }
 }

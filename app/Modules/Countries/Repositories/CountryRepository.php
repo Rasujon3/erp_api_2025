@@ -2,7 +2,7 @@
 
 namespace App\Modules\Countries\Repositories;
 
-use App\Modules\AdminGroups\Models\AdminGroup;
+use App\Modules\AdminGroups\Models\GroupCountry;
 use App\Modules\Areas\Models\Area;
 use App\Modules\City\Models\City;
 use App\Modules\Countries\Models\Country;
@@ -349,7 +349,7 @@ class CountryRepository
         $existOnState = State::where('country_id', $id)->whereNull('deleted_at')->exists();
         $existOnCity = City::where('country_id', $id)->whereNull('deleted_at')->exists();
         $existOnArea = Area::where('country_id', $id)->whereNull('deleted_at')->exists();
-        $existOnAdminGroup = AdminGroup::where('country_id', $id)->whereNull('deleted_at')->exists();
+        $existOnAdminGroup = GroupCountry::where('country_id', $id)->whereNull('deleted_at')->exists();
 
         if ($existOnState || $existOnCity || $existOnArea || $existOnAdminGroup) {
             return true;
