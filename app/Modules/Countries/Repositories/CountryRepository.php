@@ -38,6 +38,31 @@ class CountryRepository
     }
     public function all($request)
     {
+        $list = $this->list($request);
+
+        $countries = Country::withTrashed()->get(); // Load all records including soft-deleted
+
+        $totalDraft = $countries->whereNull('deleted_at')->where('draft', true)->count();
+        $totalInactive = $countries->whereNull('deleted_at')->where('is_active', false)->count();
+        $totalActive = $countries->whereNull('deleted_at')->where('is_active', true)->count();
+        $totalDeleted = $countries->whereNotNull('deleted_at')->count();
+        $totalUpdated = $countries->whereNull('deleted_at')->whereNotNull('updated_at')->count();
+
+        // Ensure totalCountries is with soft-deleted
+        $totalCountries = $countries->count();
+
+        return [
+            'totalCountries' => $totalCountries,
+            'totalDraft' => $totalDraft,
+            'totalInactive' => $totalInactive,
+            'totalActive' => $totalActive,
+            'totalUpdated' => $totalUpdated,
+            'totalDeleted' => $totalDeleted,
+            'list' => $list,
+        ];
+    }
+    private function list($request)
+    {
         $query = Country::withTrashed(); // Load all records including soft-deleted
 
         if ($request->has('draft')) {
@@ -55,9 +80,8 @@ class CountryRepository
             } else {
                 $query->whereNull('deleted_at');
             }
-        } else {
-            $query->whereNull('deleted_at');
         }
+
         if ($request->has('is_updated')) {
             if ($request->input('is_updated') == 1) {
                 $query->whereNotNull('updated_at');
@@ -67,27 +91,7 @@ class CountryRepository
         }
 
         $list = $query->get();
-
-        $countries = Country::withTrashed()->get(); // Load all records including soft-deleted
-
-        $totalDraft = $countries->whereNull('deleted_at')->where('draft', true)->count();
-        $totalInactive = $countries->whereNull('deleted_at')->where('is_active', false)->count();
-        $totalActive = $countries->whereNull('deleted_at')->where('is_active', true)->count();
-        $totalDeleted = $countries->whereNotNull('deleted_at')->count();
-        $totalUpdated = $countries->whereNull('deleted_at')->whereNotNull('updated_at')->count();
-
-        // Ensure totalCountries is without soft-deleted
-        $totalCountries = $countries->whereNull('deleted_at')->count();
-
-        return [
-            'totalCountries' => $totalCountries,
-            'totalDraft' => $totalDraft,
-            'totalInactive' => $totalInactive,
-            'totalActive' => $totalActive,
-            'totalUpdated' => $totalUpdated,
-            'totalDeleted' => $totalDeleted,
-            'list' => $list,
-        ];
+        return $list;
     }
 
     public function store(array $data): ?Country
@@ -95,7 +99,7 @@ class CountryRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if ($data['draft'] == 1) {
+            if (isset($data['flag']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
@@ -133,11 +137,10 @@ class CountryRepository
 
     public function update(Country $country, array $data): ?Country
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-
             // Set drafted_at timestamp if it's a draft
-            if ($data['draft'] == 1) {
+            if (isset($data['flag']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
@@ -150,8 +153,17 @@ class CountryRepository
             $country->update($data);
 
             // Soft delete the record if 'is_delete' is 1
-            if (!empty($data['is_delete']) && $data['is_delete'] == 1) {
-                $this->delete($country);
+            if (isset($data['is_delete'])) {
+                if ($data['is_delete'] == 1) {
+                    $this->delete($country);
+                } else {
+                    // restore the data from soft-deleted
+                    $country->update([ 'is_deleted' => 0, 'deleted_at' => null ]);
+                    // Log activity for update
+                    ActivityLogger::log('Country Updated', 'Country', 'Country', $country->id, [
+                        'name' => $country->name
+                    ]);
+                }
             } else {
                 // Log activity for update
                 ActivityLogger::log('Country Updated', 'Country', 'Country', $country->id, [
@@ -177,14 +189,16 @@ class CountryRepository
     }
     public function delete(Country $country): bool
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
             // Attempt to delete flag image if it exists
             $deleteOldFile = $this->deleteOldFile($country);
             // if delete old file, then update country table on flag column is null
             if ($deleteOldFile) {
                 $country->update(['flag' => null]);
             }
+
+            $country->update([ 'is_deleted' => 1 ]);
             // Perform soft delete
             $deleted = $country->delete();
             if (!$deleted) {
@@ -215,7 +229,7 @@ class CountryRepository
     }
     public function find($id)
     {
-        return Country::find($id);
+        return Country::withTrashed()->find($id);
     }
     public function storeFile($file)
     {

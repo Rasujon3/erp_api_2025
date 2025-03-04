@@ -28,6 +28,8 @@ class Country extends Model
         'drafted_at',
         'is_active',
         'flag',
+        'is_deleted',
+        'deleted_at',
     ];
 
     public static function rules($countryId = null)
@@ -39,14 +41,15 @@ class Country extends Model
             $uniqueCodeRule->ignore($countryId);
         }
         return [
-            'code' => ['required', 'string', 'max:45', $uniqueCodeRule],
-            'name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
+            'code' => ['nullable', 'string', 'max:45', $uniqueCodeRule],
+            'name' => 'nullable|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
             'name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u', // regex for Bangla characters with spaces
             'name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u', // regex for Arabic characters with spaces
-            'is_default' => 'boolean',
-            'draft' => 'boolean',
+            'is_default' => 'nullable|boolean',
+            'draft' => 'nullable|boolean',
             'drafted_at' => 'nullable|date',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
+            'is_deleted' => 'nullable|boolean',
             'flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
     }
@@ -59,7 +62,7 @@ class Country extends Model
                 Rule::exists('countries', 'id')->whereNull('deleted_at')
             ],
             'countries.*.code' => [
-                'required',
+                'nullable',
                 'string',
                 'max:45',
                 function ($attribute, $value, $fail) {
@@ -80,13 +83,13 @@ class Country extends Model
                     }
                 },
             ],
-            'countries.*.name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+            'countries.*.name' => 'nullable|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
             'countries.*.name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
             'countries.*.name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
-            'countries.*.is_default' => 'boolean',
-            'countries.*.draft' => 'boolean',
+            'countries.*.is_default' => 'nullable|boolean',
+            'countries.*.draft' => 'nullable|boolean',
             'countries.*.drafted_at' => 'nullable|date',
-            'countries.*.is_active' => 'boolean',
+            'countries.*.is_active' => 'nullable|boolean',
             'countries.*.flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
     }
@@ -96,14 +99,14 @@ class Country extends Model
             ->whereNull('deleted_at');
         return [
             'countries' => 'required|array|min:1',
-            'countries.*.code' => ['required', 'string', 'max:45', $uniqueCodeRule],
-            'countries.*.name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+            'countries.*.code' => ['nullable', 'string', 'max:45', $uniqueCodeRule],
+            'countries.*.name' => 'nullable|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
             'countries.*.name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
             'countries.*.name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
-            'countries.*.is_default' => 'boolean',
-            'countries.*.draft' => 'boolean',
+            'countries.*.is_default' => 'nullable|boolean',
+            'countries.*.draft' => 'nullable|boolean',
             'countries.*.drafted_at' => 'nullable|date',
-            'countries.*.is_active' => 'boolean',
+            'countries.*.is_active' => 'nullable|boolean',
             'countries.*.flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
     }
