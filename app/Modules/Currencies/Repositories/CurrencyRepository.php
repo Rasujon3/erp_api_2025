@@ -23,7 +23,7 @@ class CurrencyRepository
         $totalUpdated = $currencies->whereNull('deleted_at')->whereNotNull('updated_at')->count();
 
         // Ensure total Count is without soft-deleted
-        $totalCurrencies = $currencies->whereNull('deleted_at')->count();
+        $totalCurrencies = $currencies->count();
 
         return [
             'totalCurrencies' => $totalCurrencies,
@@ -55,8 +55,6 @@ class CurrencyRepository
             } else {
                 $query->whereNull('deleted_at');
             }
-        } else {
-            $query->whereNull('deleted_at');
         }
         if ($request->has('is_updated')) {
             if ($request->input('is_updated') == 1) {
@@ -75,7 +73,7 @@ class CurrencyRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if ($data['draft'] == 1) {
+            if (isset($data['draft']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
@@ -116,7 +114,7 @@ class CurrencyRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if ($data['draft'] == 1) {
+            if (isset($data['draft']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
@@ -129,8 +127,17 @@ class CurrencyRepository
             $currency->update($data);
 
             // Soft delete the record if 'is_delete' is 1
-            if (!empty($data['is_delete']) && $data['is_delete'] == 1) {
-                $this->delete($currency);
+            if (isset($data['is_delete'])) {
+                if ($data['is_delete'] == 1) {
+                    $this->delete($currency);
+                } else {
+                    // restore the data from soft-deleted
+                    $currency->update([ 'is_deleted' => 0, 'deleted_at' => null ]);
+                    // Log activity for update
+                    ActivityLogger::log('Currency Updated', 'Currency', 'Currency', $currency->id, [
+                        'name' => $currency->name
+                    ]);
+                }
             } else {
                 // Log activity for update
                 ActivityLogger::log('Currency Updated', 'Currency', 'Currency', $currency->id, [
@@ -156,14 +163,15 @@ class CurrencyRepository
     }
     public function delete(Currency $currency): bool
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
             // Attempt to delete flag image if it exists
             $deleteOldFile = $this->deleteOldFile($currency);
             // if delete old file, then update country table on flag column is null
             if ($deleteOldFile) {
                 $currency->update(['symbol' => null]);
             }
+            $currency->update([ 'is_deleted' => 1 ]);
             // Perform soft delete
             $deleted = $currency->delete();
             if (!$deleted) {
@@ -194,7 +202,7 @@ class CurrencyRepository
     }
     public function find($id)
     {
-        return Currency::find($id);
+        return Currency::withTrashed()->find($id);
     }
     public function storeFile($file)
     {

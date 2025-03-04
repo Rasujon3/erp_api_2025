@@ -23,7 +23,9 @@ class Currency extends Model
         'drafted_at',
         'is_active',
         'symbol',
-        'exchange'
+        'exchange',
+        'is_deleted',
+        'deleted_at'
     ];
 
     public static function rules($currencyId = null)
@@ -35,16 +37,17 @@ class Currency extends Model
             $uniqueCodeRule->ignore($currencyId);
         }
         return [
-            'code' => ['required', 'string', 'max:45', $uniqueCodeRule],
-            'name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
+            'code' => ['nullable', 'string', 'max:45', $uniqueCodeRule],
+            'name' => 'nullable|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
             'name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u', // regex for Bangla characters with spaces
             'name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u', // regex for Arabic characters with spaces
-            'is_default' => 'boolean',
-            'draft' => 'boolean',
+            'is_default' => 'nullable|boolean',
+            'draft' => 'nullable|boolean',
             'drafted_at' => 'nullable|date',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
+            'is_deleted' => 'nullable|boolean',
             'symbol' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'exchange' => 'required|numeric|min:0|max:999999.99|regex:/^\d+(\.\d{1,2})?$/',
+            'exchange' => 'nullable|numeric|min:0|max:999999.99|regex:/^\d+(\.\d{1,2})?$/',
         ];
     }
     public static function bulkRules()
@@ -56,7 +59,7 @@ class Currency extends Model
                 Rule::exists('currencies', 'id')->whereNull('deleted_at')
             ],
             'currencies.*.code' => [
-                'required',
+                'nullable',
                 'string',
                 'max:45',
                 function ($attribute, $value, $fail) {
@@ -71,15 +74,15 @@ class Currency extends Model
                     }
                 },
             ],
-            'currencies.*.name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+            'currencies.*.name' => 'nullable|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
             'currencies.*.name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
             'currencies.*.name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
-            'currencies.*.is_default' => 'boolean',
-            'currencies.*.draft' => 'boolean',
+            'currencies.*.is_default' => 'nullable|boolean',
+            'currencies.*.draft' => 'nullable|boolean',
             'currencies.*.drafted_at' => 'nullable|date',
-            'currencies.*.is_active' => 'boolean',
+            'currencies.*.is_active' => 'nullable|boolean',
             'currencies.*.flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'currencies.*.exchange' => 'required|numeric|min:0|max:999999.99|regex:/^\d+(\.\d{1,2})?$/',
+            'currencies.*.exchange' => 'nullable|numeric|min:0|max:999999.99|regex:/^\d+(\.\d{1,2})?$/',
         ];
     }
     public static function listRules()
