@@ -40,8 +40,9 @@ class AdminGroupRepository
     public function list($request)
     {
         $query = AdminGroup::withTrashed()
-            ->leftJoin('countries', 'admin_groups.country_id', '=', 'countries.id')
-            ->select('admin_groups.*', 'countries.name as country_name');
+            ->with(['countries' => function ($query) {
+                $query->select('countries.id', 'countries.name');
+            }]);
 
         if ($request->has('is_draft')) {
             $query->where('admin_groups.is_draft', $request->input('is_draft'));
@@ -68,11 +69,21 @@ class AdminGroupRepository
                 $query->whereNull('admin_groups.updated_at');
             }
         }
+
         if ($request->has('country_id')) {
-            $query->where('admin_groups.country_id', $request->input('country_id'));
+            $countryIds = $request->input('country_id');
+            $countryIds = is_array($countryIds) ? $countryIds : [$countryIds];
+            $query->whereHas('countries', function ($q) use ($countryIds) {
+                $q->whereIn('countries.id', $countryIds);
+            });
         }
 
         $list = $query->get();
+
+        $list->each(function ($adminGroup) {
+            $adminGroup->country_names = $adminGroup->countries->pluck('name')->toArray();
+        });
+
         return $list;
     }
     public function store(array $data): ?AdminGroup
@@ -88,14 +99,25 @@ class AdminGroupRepository
                 $data['flag'] = $this->storeFile($data['flag']);
             }
 
-            // Create the AdminGroup record in the database
+            // Parse country_id string to array
+            $countryIds = json_decode($data['country_id'], true);
+            if (!is_array($countryIds) || empty($countryIds)) {
+                // Log the error
+                Log::error('Invalid country_id format; expected a JSON array.' , [ 'data' => $countryIds ]);
+                return null;
+            }
+            unset($data['country_id']);
+
+            // Create the AdminGroup record
             $adminGroup = AdminGroup::create($data);
+
+            // Attach countries
+            $adminGroup->countries()->attach($countryIds);
 
             // Log activity
             ActivityLogger::log('AdminGroup Add', 'AdminGroup', 'AdminGroup', $adminGroup->id, [
                 'code' => $adminGroup->code ?? '',
                 'name' => $adminGroup->name ?? '',
-                'country_id' => $adminGroup->country_id ?? '',
             ]);
 
             DB::commit();
@@ -130,8 +152,28 @@ class AdminGroupRepository
                 $data['flag'] = $this->updateFile($data['flag'], $adminGroup);
             }
 
-            // Perform the update
+            // Parse country_id string to array if present
+            if (isset($data['country_id'])) {
+                $countryIds = json_decode($data['country_id'], true);
+                if (!is_array($countryIds) || empty($countryIds)) {
+                    // Log the error
+                    Log::error('Invalid country_id format; expected a JSON array.' , [ 'data' => $countryIds ]);
+                    return null;
+                }
+                unset($data['country_id']); // Remove from $data as it’s not a direct column
+            }
+
+            // Perform the update on admin_groups table
             $adminGroup->update($data);
+
+            // Handle country_id updates if provided
+            if (isset($countryIds)) {
+                // Delete existing country associations
+                $adminGroup->countries()->detach();
+
+                // Attach new country IDs
+                $adminGroup->countries()->attach($countryIds);
+            }
             // Soft delete the record if 'is_delete' is 1
             if (!empty($data['is_delete']) && $data['is_delete'] == 1) {
                 $deleted = $this->delete($adminGroup);
@@ -204,9 +246,10 @@ class AdminGroupRepository
     }
     public function getData($id)
     {
-        $adminGroup = AdminGroup::leftJoin('countries', 'admin_groups.country_id', '=', 'countries.id')
+        $adminGroup = AdminGroup::with(['countries' => function ($query) {
+            $query->select('countries.id', 'countries.name');
+        }])
             ->where('admin_groups.id', $id)
-            ->select('admin_groups.*', 'countries.name as country_name')
             ->first();
         return $adminGroup;
     }
@@ -221,6 +264,10 @@ class AdminGroupRepository
                     continue; // Skip if city not found
                 }
 
+                // Extract country_id array if present
+                $countryIds = $data['country_id'] ?? $adminGroup->countries->pluck('id')->toArray();
+                unset($data['country_id']); // Remove from $data as it’s not a direct column
+
                 // Update state details
                 $adminGroup->update([
                     'code' => $data['code'] ?? $adminGroup->code,
@@ -232,8 +279,13 @@ class AdminGroupRepository
                     'is_draft' => $data['is_draft'] ?? $adminGroup->is_draft,
                     'drafted_at' => $data['is_draft'] == 1 ? now() : $adminGroup->drafted_at,
                     'is_active' => $data['is_active'] ?? $adminGroup->is_active,
-                    'country_id' => $data['country_id'] ?? $adminGroup->country_id,
                 ]);
+
+                // Sync country IDs (replace existing associations)
+                if (!empty($countryIds)) {
+                    $adminGroup->countries()->sync($countryIds);
+                }
+
                 // Log activity for update
                 ActivityLogger::log('AdminGroup Updated', 'AdminGroup', 'AdminGroup', $adminGroup->id, [
                     'code' => $adminGroup->code ?? '',

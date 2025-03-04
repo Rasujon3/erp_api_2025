@@ -6,6 +6,7 @@ use App\Modules\Countries\Models\Country;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Validation\Rule;
 
@@ -20,7 +21,7 @@ class AdminGroup extends Model
         'english',
         'arabic',
         'bengali',
-        'country_id',
+        // 'country_id',
         'is_default',
         'is_draft',
         'is_active',
@@ -44,9 +45,37 @@ class AdminGroup extends Model
             'english' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
             'arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
             'bengali' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
+//            'country_id' => 'required|array|min:1',
             'country_id' => [
                 'required',
-                Rule::exists('countries', 'id')->whereNull('deleted_at')
+                'string', // Accept as string initially
+                function ($attribute, $value, $fail) {
+                    // Attempt to parse the string as a JSON array
+                    $countryIds = json_decode($value, true);
+
+                    // Check if parsing failed or result is not an array
+                    if (json_last_error() !== JSON_ERROR_NONE || !is_array($countryIds) || empty($countryIds)) {
+                        return $fail('The ' . $attribute . ' must be a valid JSON array of country IDs (e.g., "[219, 220]").');
+                    }
+
+                    // Validate each country ID
+                    foreach ($countryIds as $id) {
+                        if (!is_numeric($id) || $id <= 0) {
+                            $fail('Each ' . $attribute . ' must be a positive numeric ID.');
+                            return;
+                        }
+
+                        $exists = \DB::table('countries')
+                            ->where('id', $id)
+                            ->whereNull('deleted_at')
+                            ->exists();
+
+                        if (!$exists) {
+                            $fail('The country ID ' . $id . ' does not exist or is soft-deleted.');
+                            return;
+                        }
+                    }
+                },
             ],
             'is_default' => 'boolean',
             'is_draft' => 'boolean',
@@ -104,9 +133,10 @@ class AdminGroup extends Model
             'adminGroups.*.drafted_at' => 'nullable|date',
             'adminGroups.*.is_active' => 'boolean',
             'adminGroups.*.flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'adminGroups.*.country_id' => [
+            'adminGroups.*.country_id' => 'required|array|min:1', // Now an array
+            'adminGroups.*.country_id.*' => [
                 'required',
-                Rule::exists('countries', 'id')->whereNull('deleted_at')
+                Rule::exists('countries', 'id')->whereNull('deleted_at'),
             ],
             'adminGroups.*.group_name' => 'nullable|string|max:191',
         ];
@@ -125,8 +155,14 @@ class AdminGroup extends Model
             ],
         ];
     }
-    public function country() : belongsTo
+    public function countries()
     {
-        return $this->belongsTo(Country::class,'country_id');
+        return $this->belongsToMany(
+            Country::class,
+            'group_countries',
+            'admin_group_id',
+            'country_id'
+        )
+            ->withTimestamps();
     }
 }

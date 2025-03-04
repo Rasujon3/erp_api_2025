@@ -23,6 +23,7 @@ class AdminGroupController extends AppBaseController
     // Store data
     public function store(AdminGroupRequest $request)
     {
+//        return $this->sendResponse($request->all(), 'Admin Group created successfully!');
         $adminGroup = $this->adminGroupRepository->store($request->all());
         if (!$adminGroup) {
             return $this->sendError('Something went wrong!!! [AGS-01]', 500);
