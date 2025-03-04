@@ -325,7 +325,7 @@ class CountryRepository
                     'name_in_arabic' => $data['name_in_arabic'] ?? $country->name_in_arabic,
                     'is_default' => $data['is_default'] ?? $country->is_default,
                     'draft' => $data['draft'] ?? $country->draft,
-                    'drafted_at' => $data['draft'] == 1 ? now() : $country->drafted_at,
+                    'drafted_at' => (isset($data['draft']) && $data['draft'] == 1) ? now() : $country->drafted_at,
                     'is_active' => $data['is_active'] ?? $country->is_active,
                 ]);
 

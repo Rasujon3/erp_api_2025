@@ -281,7 +281,7 @@ class CurrencyRepository
                     'name_in_arabic' => $data['name_in_arabic'] ?? $currency->name_in_arabic,
                     'is_default' => $data['is_default'] ?? $currency->is_default,
                     'draft' => $data['draft'] ?? $currency->draft,
-                    'drafted_at' => $data['draft'] == 1 ? now() : $currency->drafted_at,
+                    'drafted_at' => (isset($data['draft']) && $data['draft'] == 1) ? now() : $currency->drafted_at,
                     'is_active' => $data['is_active'] ?? $currency->is_active,
                     'exchange' => $data['exchange'] ?? $currency->exchange,
                 ]);
