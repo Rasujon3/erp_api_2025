@@ -28,6 +28,8 @@ class Area extends Model
         'country_id',
         'state_id',
         'city_id',
+        'is_deleted',
+        'deleted_at',
     ];
 
     public static function rules($areaId = null)
@@ -39,14 +41,14 @@ class Area extends Model
             $uniqueCodeRule->ignore($areaId);
         }
         return [
-            'code' => ['required', 'string', 'max:45', $uniqueCodeRule],
-            'name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
+            'code' => ['nullable', 'string', 'max:45', $uniqueCodeRule],
+            'name' => 'nullable|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
             'name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u', // regex for Bangla characters with spaces
             'name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u', // regex for Arabic characters with spaces
-            'is_default' => 'boolean',
-            'draft' => 'boolean',
+            'is_default' => 'nullable|boolean',
+            'draft' => 'nullable|boolean',
             'drafted_at' => 'nullable|date',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
             'country_id' => [
                 'required',
                 Rule::exists('countries', 'id')->whereNull('deleted_at')
@@ -70,7 +72,7 @@ class Area extends Model
                 Rule::exists('areas', 'id')->whereNull('deleted_at')
             ],
             'areas.*.code' => [
-                'required',
+                'nullable',
                 'string',
                 'max:45',
                 function ($attribute, $value, $fail) {
@@ -85,13 +87,13 @@ class Area extends Model
                     }
                 },
             ],
-            'areas.*.name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+            'areas.*.name' => 'nullable|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
             'areas.*.name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
             'areas.*.name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
-            'areas.*.is_default' => 'boolean',
-            'areas.*.draft' => 'boolean',
+            'areas.*.is_default' => 'nullable|boolean',
+            'areas.*.draft' => 'nullable|boolean',
             'areas.*.drafted_at' => 'nullable|date',
-            'areas.*.is_active' => 'boolean',
+            'areas.*.is_active' => 'nullable|boolean',
             'areas.*.country_id' => [
                 'required',
                 Rule::exists('countries', 'id')->whereNull('deleted_at')

@@ -23,7 +23,7 @@ class AreaRepository
         $totalUpdated = $areas->whereNull('deleted_at')->whereNotNull('updated_at')->count();
 
         // Ensure total count is without soft-deleted
-        $totalAreas = $areas->whereNull('deleted_at')->count();
+        $totalAreas = $areas->count();
 
         return [
             'totalAreas' => $totalAreas,
@@ -62,8 +62,6 @@ class AreaRepository
             } else {
                 $query->whereNull('areas.deleted_at');
             }
-        } else {
-            $query->whereNull('areas.deleted_at');
         }
         if ($request->has('is_updated')) {
             if ($request->input('is_updated') == 1) {
@@ -90,7 +88,7 @@ class AreaRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if ($data['draft'] == 1) {
+            if (isset($data['draft']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
@@ -128,15 +126,25 @@ class AreaRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if ($data['draft'] == 1) {
+            if (isset($data['draft']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
             // Perform the update
             $area->update($data);
             // Soft delete the record if 'is_delete' is 1
-            if (!empty($data['is_delete']) && $data['is_delete'] == 1) {
-                $this->delete($area);
+            if (isset($data['is_delete'])) {
+                if ($data['is_delete'] == 1) {
+                    $this->delete($area);
+                } else {
+                    $area->update([ 'is_deleted' => 0, 'deleted_at' => null, 'is_active' => 1 ]);
+                    ActivityLogger::log('Area Updated', 'Area', 'Area', $area->id, [
+                        'name' => $area->name ?? '',
+                        'country_id' => $area->country_id ?? '',
+                        'state_id' => $area->state_id ?? '',
+                        'city_id' => $area->city_id ?? '',
+                    ]);
+                }
             } else {
                 // Log activity for update
                 ActivityLogger::log('Area Updated', 'Area', 'Area', $area->id, [
@@ -167,6 +175,7 @@ class AreaRepository
     {
         DB::beginTransaction();
         try {
+            $area->update([ 'is_deleted' => 1, 'is_active' => 0 ]);
             // Perform soft delete
             $deleted = $area->delete();
             if (!$deleted) {
@@ -199,11 +208,12 @@ class AreaRepository
     }
     public function find($id)
     {
-        return Area::find($id);
+        return Area::withTrashed()->find($id);
     }
     public function getData($id)
     {
-        $area = Area::leftJoin('countries', 'countries.id', '=', 'areas.country_id')
+        $area = Area::withTrashed()
+            ->leftJoin('countries', 'countries.id', '=', 'areas.country_id')
             ->leftJoin('states', 'states.id', '=', 'areas.state_id')
             ->leftJoin('cities', 'cities.id', '=', 'areas.city_id')
             ->where('areas.id', $id)
@@ -235,11 +245,11 @@ class AreaRepository
                     'name_in_arabic' => $data['name_in_arabic'] ?? $area->name_in_arabic,
                     'is_default' => $data['is_default'] ?? $area->is_default,
                     'draft' => $data['draft'] ?? $area->draft,
-                    'drafted_at' => $data['draft'] == 1 ? now() : $area->drafted_at,
+                    'drafted_at' => (isset($data['draft']) && $data['draft'] == 1) ? now() : $area->drafted_at,
                     'is_active' => $data['is_active'] ?? $area->is_active,
                     'country_id' => $data['country_id'] ?? $area->country_id,
                     'state_id' => $data['state_id'] ?? $area->state_id,
-                    '"city_id"' => $data['city_id'] ?? $area->city_id,
+                    'city_id' => $data['city_id'] ?? $area->city_id,
                     'description' => $data['description'] ?? $area->description,
                 ]);
                 // Log activity for update
