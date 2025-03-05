@@ -99,7 +99,7 @@ class CountryRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if (isset($data['flag']) && $data['draft'] == 1) {
+            if (isset($data['draft']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
@@ -140,7 +140,7 @@ class CountryRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if (isset($data['flag']) && $data['draft'] == 1) {
+            if (isset($data['draft']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
@@ -158,7 +158,7 @@ class CountryRepository
                     $this->delete($country);
                 } else {
                     // restore the data from soft-deleted
-                    $country->update([ 'is_deleted' => 0, 'deleted_at' => null ]);
+                    $country->update([ 'is_deleted' => 0, 'deleted_at' => null, 'is_active' => 1 ]);
                     // Log activity for update
                     ActivityLogger::log('Country Updated', 'Country', 'Country', $country->id, [
                         'name' => $country->name
@@ -191,14 +191,16 @@ class CountryRepository
     {
         DB::beginTransaction();
         try {
+            /*
             // Attempt to delete flag image if it exists
             $deleteOldFile = $this->deleteOldFile($country);
             // if delete old file, then update country table on flag column is null
             if ($deleteOldFile) {
                 $country->update(['flag' => null]);
             }
+            */
 
-            $country->update([ 'is_deleted' => 1 ]);
+            $country->update([ 'is_deleted' => 1, 'is_active' => 0 ]);
             // Perform soft delete
             $deleted = $country->delete();
             if (!$deleted) {
