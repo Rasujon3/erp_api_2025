@@ -132,7 +132,7 @@ class CurrencyRepository
                     $this->delete($currency);
                 } else {
                     // restore the data from soft-deleted
-                    $currency->update([ 'is_deleted' => 0, 'deleted_at' => null ]);
+                    $currency->update([ 'is_deleted' => 0, 'deleted_at' => null, 'is_active' => 1 ]);
                     // Log activity for update
                     ActivityLogger::log('Currency Updated', 'Currency', 'Currency', $currency->id, [
                         'name' => $currency->name
@@ -165,13 +165,15 @@ class CurrencyRepository
     {
         DB::beginTransaction();
         try {
+            /*
             // Attempt to delete flag image if it exists
             $deleteOldFile = $this->deleteOldFile($currency);
             // if delete old file, then update country table on flag column is null
             if ($deleteOldFile) {
                 $currency->update(['symbol' => null]);
             }
-            $currency->update([ 'is_deleted' => 1 ]);
+            */
+            $currency->update([ 'is_deleted' => 1, 'is_active' => 0 ]);
             // Perform soft delete
             $deleted = $currency->delete();
             if (!$deleted) {
