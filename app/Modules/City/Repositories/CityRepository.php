@@ -24,7 +24,7 @@ class CityRepository
         $totalUpdated = $cities->whereNull('deleted_at')->whereNotNull('updated_at')->count();
 
         // Ensure total count is without soft-deleted
-        $totalCities = $cities->whereNull('deleted_at')->count();
+        $totalCities = $cities->count();
 
         return [
             'totalCities' => $totalCities,
@@ -59,8 +59,6 @@ class CityRepository
             } else {
                 $query->whereNull('cities.deleted_at');
             }
-        } else {
-            $query->whereNull('cities.deleted_at');
         }
         if ($request->has('is_updated')) {
             if ($request->input('is_updated') == 1) {
@@ -84,7 +82,7 @@ class CityRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if ($data['draft'] == 1) {
+            if (isset($data['draft']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
@@ -121,15 +119,24 @@ class CityRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if ($data['draft'] == 1) {
+            if (isset($data['draft']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
             // Perform the update
             $city->update($data);
             // Soft delete the record if 'is_delete' is 1
-            if (!empty($data['is_delete']) && $data['is_delete'] == 1) {
-                $this->delete($city);
+            if (isset($data['is_delete'])) {
+                if ($data['is_delete'] == 1) {
+                    $this->delete($city);
+                } else {
+                    $city->update([ 'is_deleted' => 0, 'deleted_at' => null, 'is_active' => 1 ]);
+                    ActivityLogger::log('City Updated', 'City', 'City', $city->id, [
+                        'name' => $city->name ?? '',
+                        'country_id' => $city->country_id ?? '',
+                        'state_id' => $city->state_id ?? ''
+                    ]);
+                }
             } else {
                 // Log activity for update
                 ActivityLogger::log('City Updated', 'City', 'City', $city->id, [
@@ -159,6 +166,7 @@ class CityRepository
     {
         DB::beginTransaction();
         try {
+            $city->update([ 'is_deleted' => 1, 'is_active' => 0 ]);
             // Perform soft delete
             $deleted = $city->delete();
             if (!$deleted) {
@@ -190,11 +198,12 @@ class CityRepository
     }
     public function find($id)
     {
-        return City::find($id);
+        return City::withTrashed()->find($id);
     }
     public function getData($id)
     {
-        $city = City::leftJoin('countries', 'cities.country_id', '=', 'countries.id')
+        $city = City::withTrashed()
+            ->leftJoin('countries', 'cities.country_id', '=', 'countries.id')
             ->leftJoin('states', 'states.id', '=', 'cities.state_id')
             ->where('cities.id', $id)
             ->select('cities.*', 'countries.name as country_name', 'states.name as state_name')
@@ -220,7 +229,7 @@ class CityRepository
                     'name_in_arabic' => $data['name_in_arabic'] ?? $city->name_in_arabic,
                     'is_default' => $data['is_default'] ?? $city->is_default,
                     'draft' => $data['draft'] ?? $city->draft,
-                    'drafted_at' => $data['draft'] == 1 ? now() : $city->drafted_at,
+                    'drafted_at' => (isset($data['draft']) && $data['draft'] == 1) ? now() : $city->drafted_at,
                     'is_active' => $data['is_active'] ?? $city->is_active,
                     'country_id' => $data['country_id'] ?? $city->country_id,
                     'state_id' => $data['state_id'] ?? $city->state_id,
