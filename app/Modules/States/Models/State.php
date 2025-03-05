@@ -27,6 +27,8 @@ class State extends Model
         'draft',
         'drafted_at',
         'is_active',
+        'is_deleted',
+        'deleted_at',
         'country_id'
     ];
 
@@ -39,14 +41,15 @@ class State extends Model
             $uniqueCodeRule->ignore($stateId);
         }
         return [
-            'code' => ['required', 'string', 'max:45', $uniqueCodeRule],
-            'name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
+            'code' => ['nullable', 'string', 'max:45', $uniqueCodeRule],
+            'name' => 'nullable|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u', // regex for English characters with spaces
             'name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u', // regex for Bangla characters with spaces
             'name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u', // regex for Arabic characters with spaces
-            'is_default' => 'boolean',
-            'draft' => 'boolean',
+            'is_default' => 'nullable|boolean',
+            'draft' => 'nullable|boolean',
             'drafted_at' => 'nullable|date',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
+            'is_deleted' => 'nullable|boolean',
             'country_id' => [
                 'required',
                 Rule::exists('countries', 'id')->whereNull('deleted_at') // Check if country exists & is NOT soft-deleted
@@ -62,7 +65,7 @@ class State extends Model
                 Rule::exists('states', 'id')->whereNull('deleted_at')
             ],
             'states.*.code' => [
-                'required',
+                'nullable',
                 'string',
                 'max:45',
                 function ($attribute, $value, $fail) {
@@ -77,13 +80,13 @@ class State extends Model
                     }
                 },
             ],
-            'states.*.name' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+            'states.*.name' => 'nullable|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
             'states.*.name_in_bangla' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
             'states.*.name_in_arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
-            'states.*.is_default' => 'boolean',
-            'states.*.draft' => 'boolean',
+            'states.*.is_default' => 'nullable|boolean',
+            'states.*.draft' => 'nullable|boolean',
             'states.*.drafted_at' => 'nullable|date',
-            'states.*.is_active' => 'boolean',
+            'states.*.is_active' => 'nullable|boolean',
             'states.*.country_id' => [
                 'required',
                 Rule::exists('countries', 'id')->whereNull('deleted_at') // Check if country exists & is NOT soft-deleted

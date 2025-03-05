@@ -25,7 +25,7 @@ class StateRepository
         $totalUpdated = $states->whereNull('deleted_at')->whereNotNull('updated_at')->count();
 
         // Ensure totalCountries is without soft-deleted
-        $totalStates = $states->whereNull('deleted_at')->count();
+        $totalStates = $states->count();
 
         return [
             'totalStates' => $totalStates,
@@ -34,7 +34,6 @@ class StateRepository
             'totalActive' => $totalActive,
             'totalUpdated' => $totalUpdated,
             'totalDeleted' => $totalDeleted,
-            'list_count' => count($list),
             'list' => $list,
         ];
     }
@@ -60,8 +59,6 @@ class StateRepository
             } else {
                 $query->whereNull('states.deleted_at');
             }
-        } else {
-            $query->whereNull('states.deleted_at');
         }
         if ($request->has('is_updated')) {
             if ($request->input('is_updated') == 1) {
@@ -82,7 +79,7 @@ class StateRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if ($data['draft'] == 1) {
+            if (isset($data['draft']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
@@ -118,15 +115,23 @@ class StateRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if ($data['draft'] == 1) {
+            if (isset($data['draft']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
             // Perform the update
             $state->update($data);
             // Soft delete the record if 'is_delete' is 1
-            if (!empty($data['is_delete']) && $data['is_delete'] == 1) {
-                $this->delete($state);
+            if (isset($data['is_delete'])) {
+                if ($data['is_delete'] == 1) {
+                    $this->delete($state);
+                } else {
+                    $state->update([ 'is_deleted' => 0, 'deleted_at' => null, 'is_active' => 1 ]);
+                    ActivityLogger::log('State Updated', 'States', 'State', $state->id, [
+                        'name' => $state->name ?? '',
+                        'country_id' => $state->country_id ?? ''
+                    ]);
+                }
             } else {
                 // Log activity for update
                 ActivityLogger::log('State Updated', 'States', 'State', $state->id, [
@@ -155,6 +160,7 @@ class StateRepository
     {
         DB::beginTransaction();
         try {
+            $state->update([ 'is_deleted' => 1, 'is_active' => 0 ]);
             // Perform soft delete
             $deleted = $state->delete();
             if (!$deleted) {
@@ -185,11 +191,12 @@ class StateRepository
     }
     public function find($id)
     {
-        return State::find($id);
+        return State::withTrashed()->find($id);
     }
     public function getData($id)
     {
-        $state = State::leftJoin('countries', 'states.country_id', '=', 'countries.id')
+        $state = State::withTrashed()
+            ->leftJoin('countries', 'states.country_id', '=', 'countries.id')
             ->where('states.id', $id)
             ->select('states.*', 'countries.name as country_name')
             ->first();
@@ -214,7 +221,7 @@ class StateRepository
                     'name_in_arabic' => $data['name_in_arabic'] ?? $state->name_in_arabic,
                     'is_default' => $data['is_default'] ?? $state->is_default,
                     'draft' => $data['draft'] ?? $state->draft,
-                    'drafted_at' => $data['draft'] == 1 ? now() : $state->drafted_at,
+                    'drafted_at' => (isset($data['draft']) && $data['draft'] == 1) ? now() : $state->drafted_at,
                     'is_active' => $data['is_active'] ?? $state->is_active,
                     'country_id' => $data['country_id'] ?? $state->country_id,
                     'description' => $data['description'] ?? $state->description,
