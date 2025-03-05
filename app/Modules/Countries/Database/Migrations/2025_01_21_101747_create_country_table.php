@@ -10,14 +10,14 @@ return new class extends Migration
     {
         Schema::create('countries', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 45);
-            $table->string('name', 191);
+            $table->string('code', 45)->nullable();
+            $table->string('name', 191)->nullable();
             $table->string('name_in_bangla', 191)->nullable();
             $table->string('name_in_arabic', 191)->nullable();
-            $table->boolean('is_default')->default(false);
-            $table->boolean('draft')->default(false);
+            $table->boolean('is_default')->nullable()->default(false);
+            $table->boolean('draft')->nullable()->default(false);
             $table->timestamp('drafted_at')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->nullable()->default(true);
             $table->string('flag')->nullable(); // Add symbols field
             $table->timestamps();
             $table->softDeletes();
