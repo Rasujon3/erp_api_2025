@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('english', 191)->nullable();
             $table->string('arabic', 191)->nullable();
             $table->string('bengali', 191)->nullable();
+            $table->string('group_name', 191)->nullable();
 //            $table->foreignId('country_id')->references('id')->on('countries')
 //                ->onUpdate('cascade')
 //                ->onDelete('cascade');

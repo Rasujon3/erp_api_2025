@@ -15,19 +15,19 @@ class AdminGroupRepository
     {
         $list = $this->list($request);
 
-        $cities = AdminGroup::withTrashed()->get(); // Load all records including soft-deleted
+        $adminGroups = AdminGroup::withTrashed()->get(); // Load all records including soft-deleted
 
-        $totalDraft = $cities->whereNull('deleted_at')->where('draft', true)->count();
-        $totalInactive = $cities->whereNull('deleted_at')->where('is_active', false)->count();
-        $totalActive = $cities->whereNull('deleted_at')->where('is_active', true)->count();
-        $totalDeleted = $cities->whereNotNull('deleted_at')->count();
-        $totalUpdated = $cities->whereNull('deleted_at')->whereNotNull('updated_at')->count();
+        $totalDraft = $adminGroups->whereNull('deleted_at')->where('draft', true)->count();
+        $totalInactive = $adminGroups->whereNull('deleted_at')->where('is_active', false)->count();
+        $totalActive = $adminGroups->whereNull('deleted_at')->where('is_active', true)->count();
+        $totalDeleted = $adminGroups->whereNotNull('deleted_at')->count();
+        $totalUpdated = $adminGroups->whereNull('deleted_at')->whereNotNull('updated_at')->count();
 
         // Ensure total count is without soft-deleted
-        $totalCities = $cities->whereNull('deleted_at')->count();
+        $totalGroups = $adminGroups->count();
 
         return [
-            'totalCities' => $totalCities,
+            'totalGroups' => $totalGroups,
             'totalDraft' => $totalDraft,
             'totalInactive' => $totalInactive,
             'totalActive' => $totalActive,
@@ -59,8 +59,6 @@ class AdminGroupRepository
             } else {
                 $query->whereNull('admin_groups.deleted_at');
             }
-        } else {
-            $query->whereNull('admin_groups.deleted_at');
         }
         if ($request->has('is_updated')) {
             if ($request->input('is_updated') == 1) {
@@ -91,7 +89,7 @@ class AdminGroupRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if ($data['is_draft'] == 1) {
+            if (isset($data['is_draft']) && $data['is_draft'] == 1) {
                 $data['drafted_at'] = now();
             }
             // Handle file upload for 'flag'
@@ -143,7 +141,7 @@ class AdminGroupRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if ($data['is_draft'] == 1) {
+            if (isset($data['is_draft']) && $data['is_draft'] == 1) {
                 $data['drafted_at'] = now();
             }
 
@@ -175,13 +173,18 @@ class AdminGroupRepository
                 $adminGroup->countries()->attach($countryIds);
             }
             // Soft delete the record if 'is_delete' is 1
-            if (!empty($data['is_delete']) && $data['is_delete'] == 1) {
-                $deleted = $this->delete($adminGroup);
-                if (!$deleted) {
-                    DB::rollBack();
-                    return null;
+            if (isset($data['is_delete'])) {
+                if ($data['is_delete'] == 1) {
+                    $this->delete($adminGroup);
+                } else {
+                    $adminGroup->update([ 'is_deleted' => 0, 'deleted_at' => null, 'is_active' => 1 ]);
+                    // Log activity for update
+                    ActivityLogger::log('AdminGroup Updated', 'AdminGroup', 'AdminGroup', $adminGroup->id, [
+                        'code' => $adminGroup->code ?? '',
+                        'name' => $adminGroup->name ?? '',
+                        'country_id' => $adminGroup->country_id ?? '',
+                    ]);
                 }
-                $adminGroup->update(['is_deleted' => 1]);
             } else {
                 // Log activity for update
                 ActivityLogger::log('AdminGroup Updated', 'AdminGroup', 'AdminGroup', $adminGroup->id, [
@@ -211,6 +214,7 @@ class AdminGroupRepository
     {
         DB::beginTransaction();
         try {
+            $adminGroup->update([ 'is_deleted' => 1, 'is_active' => 0 ]);
             // Perform soft delete
             $deleted = $adminGroup->delete();
             if (!$deleted) {
@@ -242,11 +246,12 @@ class AdminGroupRepository
     }
     public function find($id)
     {
-        return AdminGroup::find($id);
+        return AdminGroup::withTrashed()->find($id);
     }
     public function getData($id)
     {
-        $adminGroup = AdminGroup::with(['countries' => function ($query) {
+        $adminGroup = AdminGroup::withTrashed()
+            ->with(['countries' => function ($query) {
             $query->select('countries.id', 'countries.name');
         }])
             ->where('admin_groups.id', $id)
@@ -277,7 +282,7 @@ class AdminGroupRepository
                     'group_name' => $data['group_name'] ?? $adminGroup->group_name,
                     'is_default' => $data['is_default'] ?? $adminGroup->is_default,
                     'is_draft' => $data['is_draft'] ?? $adminGroup->is_draft,
-                    'drafted_at' => $data['is_draft'] == 1 ? now() : $adminGroup->drafted_at,
+                    'drafted_at' => (isset($data['is_draft']) && $data['is_draft'] == 1) ? now() : $adminGroup->drafted_at,
                     'is_active' => $data['is_active'] ?? $adminGroup->is_active,
                 ]);
 

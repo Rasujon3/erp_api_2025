@@ -29,25 +29,26 @@ class AdminGroup extends Model
         'drafted_at',
         'flag',
         'group_name',
+        'deleted_at',
     ];
 
     public static function rules($adminGroupId = null)
     {
         return [
             'code' => [
-                'required',
+                'nullable',
                 'string',
                 'max:191',
                 Rule::unique('admin_groups', 'code')
                     ->ignore($adminGroupId)
                     ->whereNull('deleted_at'),
             ],
-            'english' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+            'english' => 'nullable|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
             'arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
             'bengali' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
 //            'country_id' => 'required|array|min:1',
             'country_id' => [
-                'required',
+                $adminGroupId ? 'nullable' : 'required',
                 'string', // Accept as string initially
                 function ($attribute, $value, $fail) {
                     // Attempt to parse the string as a JSON array
@@ -77,10 +78,10 @@ class AdminGroup extends Model
                     }
                 },
             ],
-            'is_default' => 'boolean',
-            'is_draft' => 'boolean',
-            'is_active' => 'boolean',
-            'is_deleted' => 'boolean',
+            'is_default' => 'nullable|boolean',
+            'is_draft' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
+            'is_deleted' => 'nullable|boolean',
             'drafted_at' => 'nullable|date',
             'flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'group_name' => 'nullable|string|max:191',
@@ -95,7 +96,7 @@ class AdminGroup extends Model
                 Rule::exists('admin_groups', 'id')->whereNull('deleted_at')
             ],
             'adminGroups.*.code' => [
-                'required',
+                'nullable',
                 'string',
                 'max:45',
                 function ($attribute, $value, $fail) {
@@ -125,13 +126,13 @@ class AdminGroup extends Model
                     }
                 },
             ],
-            'adminGroups.*.english' => 'required|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
+            'adminGroups.*.english' => 'nullable|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
             'adminGroups.*.bengali' => 'nullable|string|max:191|regex:/^[\p{Bengali}\s]+$/u',
             'adminGroups.*.arabic' => 'nullable|string|max:191|regex:/^[\p{Arabic}\s]+$/u',
-            'adminGroups.*.is_default' => 'boolean',
-            'adminGroups.*.draft' => 'boolean',
+            'adminGroups.*.is_default' => 'nullable|boolean',
+            'adminGroups.*.draft' => 'nullable|boolean',
             'adminGroups.*.drafted_at' => 'nullable|date',
-            'adminGroups.*.is_active' => 'boolean',
+            'adminGroups.*.is_active' => 'nullable|boolean',
             'adminGroups.*.flag' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'adminGroups.*.country_id' => 'required|array|min:1', // Now an array
             'adminGroups.*.country_id.*' => [
