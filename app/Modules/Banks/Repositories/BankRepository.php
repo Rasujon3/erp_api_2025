@@ -23,7 +23,7 @@ class BankRepository
         $totalUpdated = $suppliers->whereNull('deleted_at')->whereNotNull('updated_at')->count();
 
         // Ensure total Count is without soft-deleted
-        $totalBanks = $suppliers->whereNull('deleted_at')->count();
+        $totalBanks = $suppliers->count();
 
         return [
             'totalBanks' => $totalBanks,
@@ -55,8 +55,6 @@ class BankRepository
             } else {
                 $query->whereNull('deleted_at');
             }
-        } else {
-            $query->whereNull('deleted_at');
         }
         if ($request->has('is_updated')) {
             if ($request->input('is_updated') == 1) {
@@ -75,25 +73,16 @@ class BankRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            /*
-            if ($data['draft'] == 1) {
+            if (isset($data['draft']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
-            */
-
-            /*
-            // Handle file upload for 'flag'
-            if (isset($data['customer_logo']) && $data['customer_logo'] instanceof \Illuminate\Http\UploadedFile) {
-                $data['customer_logo'] = $this->storeFile($data['customer_logo']);
-            }
-            */
 
             // Create the country record in the database
             $bank = Bank::create($data);
 
             // Log activity
             ActivityLogger::log('Bank Add', 'Bank', 'Bank', $bank->id, [
-                'name' => $bank->name ?? '',
+                'bank_name' => $bank->bank_name ?? '',
                 'account_number' => $bank->account_number ?? ''
             ]);
 
@@ -120,29 +109,30 @@ class BankRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            /*
-            if ($data['draft'] == 1) {
+            if (isset($data['draft']) && $data['draft'] == 1) {
                 $data['drafted_at'] = now();
             }
-            */
-
-            /*
-            // Handle file upload for 'flag'
-            if (isset($data['customer_logo']) && $data['customer_logo'] instanceof \Illuminate\Http\UploadedFile) {
-                $data['customer_logo'] = $this->updateFile($data['customer_logo'], $bank);
-            }
-            */
 
             // Perform the update
             $bank->update($data);
 
             // Soft delete the record if 'is_delete' is 1
-            if (!empty($data['is_delete']) && $data['is_delete'] == 1) {
-                $this->delete($bank);
+            if (isset($data['is_delete'])) {
+                if ($data['is_delete'] == 1) {
+                    $this->delete($bank);
+                } else {
+                    $bank->update([ 'is_deleted' => 0, 'deleted_at' => null, 'is_active' => 1 ]);
+                    // Log activity for update
+                    ActivityLogger::log('Bank Updated', 'Bank', 'Bank', $bank->id, [
+                        'bank_name' => $bank->bank_name ?? '',
+                        'account_number' => $bank->account_number ?? ''
+                    ]);
+                }
+
             } else {
                 // Log activity for update
                 ActivityLogger::log('Bank Updated', 'Bank', 'Bank', $bank->id, [
-                    'name' => $bank->name ?? '',
+                    'bank_name' => $bank->bank_name ?? '',
                     'account_number' => $bank->account_number ?? ''
                 ]);
             }
@@ -165,14 +155,9 @@ class BankRepository
     }
     public function delete(Bank $bank): bool
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-            // Attempt to delete flag image if it exists
-            $deleteOldFile = $this->deleteOldFile($bank);
-            // if delete old file, then update country table on flag column is null
-            if ($deleteOldFile) {
-                $bank->update(['customer_logo' => null]);
-            }
+            $bank->update([ 'is_deleted' => 1, 'is_active' => 0 ]);
             // Perform soft delete
             $deleted = $bank->delete();
             if (!$deleted) {
@@ -181,8 +166,8 @@ class BankRepository
             }
             // Log activity after successful deletion
             ActivityLogger::log('Bank Deleted', 'Bank', 'Bank', $bank->id, [
-                'company_name' => $bank->company_name ?? '',
-                'phone' => $bank->phone ?? ''
+                'bank_name' => $bank->bank_name ?? '',
+                'account_number' => $bank->account_number ?? ''
             ]);
             DB::commit();
             return true;
@@ -191,7 +176,7 @@ class BankRepository
 
             // Log error
             Log::error('Error deleting Bank: ' , [
-                'country_id' => $bank->id,
+                'id' => $bank->id,
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
                 'line' => $e->getLine(),
@@ -203,7 +188,7 @@ class BankRepository
     }
     public function find($id)
     {
-        return Bank::find($id);
+        return Bank::withTrashed()->find($id);
     }
     public function storeFile($file)
     {
@@ -276,11 +261,15 @@ class BankRepository
 
                 // Update details
                 $bank->update([
-                    'name' => $data['name'] ?? $bank->name,
+                    'bank_name' => $data['bank_name'] ?? $bank->bank_name,
                     'account_number' => $data['account_number'] ?? $bank->account_number,
                     'branch_name' => $data['branch_name'] ?? $bank->branch_name,
-                    'swift_code' => $data['swift_code'] ?? $bank->swift_code,
-                    'description' => $data['description'] ?? $bank->description,
+                    'iban_number' => $data['iban_number'] ?? $bank->iban_number,
+                    'opening_balance' => $data['opening_balance'] ?? $bank->opening_balance,
+                    'is_default' => $data['is_default'] ?? $bank->is_default,
+                    'draft' => $data['draft'] ?? $bank->draft,
+                    'drafted_at' => (isset($data['is_draft']) && $data['is_draft'] == 1) ? now() : $bank->drafted_at,
+                    'is_active' => $data['is_active'] ?? $bank->is_active,
                 ]);
 
                 // Handle flag image upload if provided

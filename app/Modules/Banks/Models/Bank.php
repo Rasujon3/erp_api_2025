@@ -14,27 +14,39 @@ class Bank extends Model
     protected $table = 'banks';
 
     protected $fillable = [
-        'name',
+        'bank_name',
         'account_number',
         'branch_name',
-        'swift_code',
-        'description'
+        'iban_number',
+        'bank_details',
+        'opening_balance',
+        'is_default',
+        'draft',
+        'drafted_at',
+        'is_active',
+        'is_deleted',
+        'deleted_at',
     ];
 
     public static function rules($bankId = null)
     {
-        $uniqueAccountNumberRule = Rule::unique('banks', 'account_number')
-            ->whereNull('deleted_at');
+        $uniqueAccountNumberRule = Rule::unique('banks', 'account_number');
 
         if ($bankId) {
             $uniqueAccountNumberRule->ignore($bankId);
         }
         return [
-            'name' => 'required|string|max:191',
-            'account_number' => ['required', 'string', 'max:50', $uniqueAccountNumberRule],
+            'bank_name' => 'nullable|string|max:191',
+            'account_number' => ['required', 'numeric', $uniqueAccountNumberRule],
             'branch_name' => 'nullable|string|max:191',
-            'swift_code' => 'nullable|string|max:20',
-            'description' => 'nullable|string',
+            'iban_number' => 'nullable|string|max:191',
+            'bank_details' => 'nullable|string',
+            'opening_balance' => 'nullable|numeric|min:0',
+            'is_default' => 'nullable|boolean',
+            'draft' => 'nullable|boolean',
+            'drafted_at' => 'nullable|date',
+            'is_active' => 'nullable|boolean',
+            'is_deleted' => 'nullable|boolean',
         ];
     }
     public static function bulkRules()
@@ -47,13 +59,12 @@ class Bank extends Model
             ],
             'banks.*.account_number' => [
                 'required',
-                'string',
-                'max:50',
+                'numeric',
                 // Check database uniqueness (existing rule)
                 function ($attribute, $value, $fail) {
                     $bankId = request()->input(str_replace('.account_number', '.id', $attribute));
                     $exists = Bank::where('account_number', $value)
-                        ->whereNull('deleted_at')
+                        # ->whereNull('deleted_at')
                         ->where('id', '!=', $bankId)
                         ->exists();
 
@@ -78,10 +89,14 @@ class Bank extends Model
                     }
                 },
             ],
-            'banks.*.name' => 'required|string|max:191',
+            'banks.*.bank_name' => 'nullable|string|max:191',
             'banks.*.branch_name' => 'nullable|string|max:191',
-            'banks.*.swift_code' => 'nullable|string|max:20',
-            'banks.*.description' => 'nullable|string',
+            'banks.*.iban_number' => 'nullable|string|max:191',
+            'banks.*.bank_details' => 'nullable|string',
+            'banks.*.opening_balance' => 'nullable|numeric|min:0',
+            'banks.*.is_default' => 'nullable|boolean',
+            'banks.*.draft' => 'nullable|boolean',
+            'banks.*.is_active' => 'nullable|boolean',
         ];
     }
     public static function listRules()
