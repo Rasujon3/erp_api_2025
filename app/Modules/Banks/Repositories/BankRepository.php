@@ -4,6 +4,7 @@ namespace App\Modules\Banks\Repositories;
 
 use App\Helpers\ActivityLogger;
 use App\Modules\Banks\Models\Bank;
+use App\Modules\Branches\Models\Branch;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -268,7 +269,7 @@ class BankRepository
                     'opening_balance' => $data['opening_balance'] ?? $bank->opening_balance,
                     'is_default' => $data['is_default'] ?? $bank->is_default,
                     'draft' => $data['draft'] ?? $bank->draft,
-                    'drafted_at' => (isset($data['is_draft']) && $data['is_draft'] == 1) ? now() : $bank->drafted_at,
+                    'drafted_at' => (isset($data['draft']) && $data['draft'] == 1) ? now() : $bank->drafted_at,
                     'is_active' => $data['is_active'] ?? $bank->is_active,
                 ]);
 
@@ -301,5 +302,13 @@ class BankRepository
 
             return null;
         }
+    }
+    public function checkExist($id): bool
+    {
+        $existOnBranch = Branch::where('bank_id', $id)->exists();
+        if ($existOnBranch) {
+            return true;
+        }
+        return false;
     }
 }

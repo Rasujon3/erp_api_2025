@@ -2,8 +2,10 @@
 
 namespace App\Modules\Banks\Models;
 
+use App\Modules\Branches\Models\Branch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Validation\Rule;
 
@@ -108,5 +110,9 @@ class Bank extends Model
             'is_deleted' => 'nullable|boolean',
             'is_updated' => 'nullable|boolean',
         ];
+    }
+    public function branches() : hasMany
+    {
+        return $this->hasMany(Branch::class, 'bank_id', 'id');
     }
 }

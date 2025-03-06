@@ -48,6 +48,12 @@ class CurrencyController extends AppBaseController
         if (!$data) {
             return $this->sendError('Currency not found');
         }
+        if (!empty($request->is_delete) && $request->is_delete == 1) {
+            $checkExist = $this->currencyRepository->checkExist($data->id);
+            if ($checkExist) {
+                return $this->sendError('Currency already used, cannot be deleted', 400);
+            }
+        }
         $updated = $this->currencyRepository->update($data, $request->all());
         if (!$updated) {
             return $this->sendError('Something went wrong!!! [CCYU-01]', 500);

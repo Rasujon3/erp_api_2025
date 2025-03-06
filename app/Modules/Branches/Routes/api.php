@@ -1,16 +1,14 @@
 <?php
 
-use App\Modules\Areas\Controllers\AreaController;
 use App\Modules\Branches\Controllers\BranchController;
 use Illuminate\Support\Facades\Route;
 
 
-Route::prefix('admin/branches')->middleware('auth:sanctum')->group(function () {
-    Route::get('/', [BranchController::class, 'index']);          // List states
-    Route::get('/summary', [BranchController::class, 'getSummary']); // Get states summary
-    Route::get('/datatable', [BranchController::class, 'getAreasDataTable']);  // Get DataTable data
-    Route::get('/{branch}', [BranchController::class, 'show']);    // View states
-    Route::post('/', [BranchController::class, 'store']);           // Create states
-    Route::put('/{branch}', [BranchController::class, 'update']);  // Update states
-    Route::delete('/{branch}', [BranchController::class, 'destroy']); // Delete states
+Route::prefix('branches')->middleware('auth:sanctum')->group(function () {
+    Route::get('/list', [BranchController::class, 'index'])->name('branches.list'); // List data
+    Route::post('/create', [BranchController::class, 'store'])->name('branches.store'); // Create data
+    Route::post('/import', [BranchController::class, 'import'])->name('branches.import'); // import data
+    Route::put('/bulk-update', [BranchController::class, 'bulkUpdate'])->name('branches.bulkUpdate'); // Bulk update
+    Route::get('/view/{branch}', [BranchController::class, 'show'])->name('branches.view'); // View data
+    Route::put('/update/{branch}', [BranchController::class, 'update'])->name('branches.update'); // Update data
 });

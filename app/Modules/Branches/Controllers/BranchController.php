@@ -2,95 +2,63 @@
 
 namespace App\Modules\Branches\Controllers;
 
-use App\Modules\Admin\Models\Country;
-use App\Modules\Areas\Queries\AreaDatatable;
-use App\Modules\Areas\Repositories\AreaRepository;
-use App\Modules\Areas\Requests\AreaRequest;
 use App\Modules\Branches\Queries\BranchDatatable;
 use App\Modules\Branches\Repositories\BranchRepository;
 use App\Modules\Branches\Requests\BranchRequest;
-use App\Modules\City\Queries\CityDatatable;
-use App\Modules\City\Repositories\CityRepository;
-use App\Modules\City\Requests\CityRequest;
-use App\Modules\States\Models\State;
-use App\Modules\States\Queries\StateDatatable;
-use App\Modules\States\Repositories\StateRepository;
-use App\Modules\States\Requests\StateRequest;
-use Illuminate\Http\Request;
 use App\Http\Controllers\AppBaseController;
 
 class BranchController extends AppBaseController
 {
     protected BranchRepository $branchRepository;
-    protected BranchDatatable $areaDatatable;
 
-    public function __construct(BranchRepository $areaRepo, BranchDatatable $branchDatatable)
+    public function __construct(BranchRepository $areaRepo)
     {
         $this->branchRepository = $areaRepo;
-        $this->areaDatatable = $branchDatatable;
     }
-
-    // Fetch all states
-    public function index()
+    // Fetch all data
+    public function index(BranchRequest $request)
     {
-        $areas = $this->branchRepository->all();
-        return $this->sendResponse($areas, 'Branches retrieved successfully.');
+        $banks = $this->branchRepository->all($request);
+        return $this->sendResponse($banks, 'Branches retrieved successfully.');
     }
-    public function getSummary()
-    {
-        $summary = $this->branchRepository->getSummaryData();
-        return $this->sendResponse($summary, 'Branch summary retrieved successfully.');
-    }
-
-
-    // Get DataTable records
-    public function getAreasDataTable(Request $request)
-    {
-        $data = BranchDatatable::getDataForDatatable($request);
-        return $this->sendResponse($data, 'Branch DataTable data retrieved successfully.');
-    }
-
-    // Get single country details
-//    public function show(Branch $state)
+    // Get single details
     public function show($branch)
     {
         $data = $this->branchRepository->find($branch);
-        // check if city exists
         if (!$data) {
             return $this->sendError('Branch not found');
         }
-        $summary = $this->branchRepository->getData($branch);
-        return $this->sendResponse($summary, 'Branch retrieved successfully.');
+        return $this->sendResponse($data, 'Branch retrieved successfully.');
     }
-
+    // store data
     public function store(BranchRequest $request)
     {
         $branch = $this->branchRepository->store($request->all());
+        if (!$branch) {
+            return $this->sendError('Something went wrong!!! [BCS-01]', 500);
+        }
         return $this->sendResponse($branch, 'Branch created successfully!');
     }
-
-    // Update country
+    // Update data
     public function update(BranchRequest $request, $branch)
     {
         $data = $this->branchRepository->find($branch);
-        // check if city exists
         if (!$data) {
             return $this->sendError('Branch not found');
         }
-        $this->branchRepository->update($data, $request->all());
+        $updated = $this->branchRepository->update($data, $request->all());
+        if (!$updated) {
+            return $this->sendError('Something went wrong!!! [BCU-02]', 500);
+        }
         return $this->sendResponse($branch, 'Branch updated successfully!');
     }
-
-    // Delete country
-//    public function destroy(Branch $state)
-    public function destroy($branch)
+    // bulk update
+    public function bulkUpdate(BranchRequest $request)
     {
-        $data = $this->branchRepository->find($branch);
-        // check if Branch exists
-        if (!$data) {
-            return $this->sendError('Branch not found');
+        $bulkUpdate = $this->branchRepository->bulkUpdate($request);
+        if (!$bulkUpdate) {
+            return $this->sendError('Something went wrong!!! [BCBU-03]', 500);
         }
-        $this->branchRepository->delete($data);
-        return $this->sendSuccess('Branch deleted successfully!');
+        return $this->sendResponse([],'Branch Bulk updated successfully!');
     }
 }

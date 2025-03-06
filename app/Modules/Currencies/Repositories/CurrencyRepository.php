@@ -3,6 +3,7 @@
 namespace App\Modules\Currencies\Repositories;
 
 use App\Helpers\ActivityLogger;
+use App\Modules\Branches\Models\Branch;
 use App\Modules\Currencies\Models\Currency;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -317,5 +318,13 @@ class CurrencyRepository
 
             return null;
         }
+    }
+    public function checkExist($id): bool
+    {
+        $existOnBranch = Branch::where('currency_id', $id)->exists();
+        if ($existOnBranch) {
+            return true;
+        }
+        return false;
     }
 }

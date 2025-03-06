@@ -33,6 +33,20 @@ class BranchRequest extends FormRequest
      */
     public function rules()
     {
+        // Get the route name and apply null-safe operator
+        $routeName = $this->route()?->getName();
+
+        if ($routeName === 'branches.import') {
+            //return Branch::importRules();
+        }
+
+        if ($routeName === 'branches.bulkUpdate') {
+            return Branch::bulkRules();
+        }
+
+        if ($routeName === 'branches.list') {
+            return Branch::listRules();
+        }
         $branchId = $this->route('branch') ?: null;
         return Branch::rules($branchId);
     }

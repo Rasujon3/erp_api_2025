@@ -4,6 +4,7 @@ namespace App\Modules\Countries\Models;
 
 use App\Modules\AdminGroups\Models\AdminGroup;
 use App\Modules\Areas\Models\Area;
+use App\Modules\Branches\Models\Branch;
 use App\Modules\City\Models\City;
 use App\Modules\States\Models\State;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -142,5 +143,9 @@ class Country extends Model
             'admin_group_id'
         )
             ->withTimestamps();
+    }
+    public function branches() : hasMany
+    {
+        return $this->hasMany(Branch::class, 'country_id', 'id');
     }
 }

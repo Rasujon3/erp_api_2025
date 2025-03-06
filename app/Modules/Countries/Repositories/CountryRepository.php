@@ -4,6 +4,7 @@ namespace App\Modules\Countries\Repositories;
 
 use App\Modules\AdminGroups\Models\GroupCountry;
 use App\Modules\Areas\Models\Area;
+use App\Modules\Branches\Models\Branch;
 use App\Modules\City\Models\City;
 use App\Modules\Countries\Models\Country;
 use App\Helpers\ActivityLogger;
@@ -366,8 +367,9 @@ class CountryRepository
         $existOnCity = City::where('country_id', $id)->whereNull('deleted_at')->exists();
         $existOnArea = Area::where('country_id', $id)->whereNull('deleted_at')->exists();
         $existOnAdminGroup = GroupCountry::where('country_id', $id)->whereNull('deleted_at')->exists();
+        $existOnBranch = Branch::where('currency_id', $id)->exists();
 
-        if ($existOnState || $existOnCity || $existOnArea || $existOnAdminGroup) {
+        if ($existOnState || $existOnCity || $existOnArea || $existOnAdminGroup || $existOnBranch) {
             return true;
         }
         return false;

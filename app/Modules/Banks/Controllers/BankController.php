@@ -44,6 +44,12 @@ class BankController extends AppBaseController
         if (!$data) {
             return $this->sendError('Bank not found');
         }
+        if (!empty($request->is_delete) && $request->is_delete == 1) {
+            $checkExist = $this->bankRepository->checkExist($data->id);
+            if ($checkExist) {
+                return $this->sendError('Bank already used, cannot be deleted', 400);
+            }
+        }
         $updated = $this->bankRepository->update($data, $request->all());
         if (!$updated) {
             return $this->sendError('Something went wrong!!! [BC-02]', 500);
