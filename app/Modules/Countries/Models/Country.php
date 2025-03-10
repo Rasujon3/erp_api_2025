@@ -75,12 +75,6 @@ class Country extends Model
                     if ($exists) {
                         $fail('The country code "' . $value . '" has already been taken.');
                     }
-
-                    $find = Country::find($countryId);
-
-                    if (!$find) {
-                        $fail('The "' . $value . '" country not found.');
-                    }
                 },
             ],
             'countries.*.name' => 'nullable|string|max:191|regex:/^[ ]*[a-zA-Z][ a-zA-Z]*[ ]*$/u',
