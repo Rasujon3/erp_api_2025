@@ -7,6 +7,8 @@ use App\Modules\Countries\Controllers\CountryController;
 
 Route::prefix('countries')->middleware('auth:sanctum')->group(function () {
     Route::get('/list', [CountryController::class, 'index'])->name('countries.list');  // List data
+    Route::get('/check-availability', [CountryController::class, 'checkAvailability'])->name('countries.checkAvailability');  // Check availability data
+    Route::get('/history', [CountryController::class, 'history'])->name('countries.history');  // Check availability data
     Route::get('/datatable', [CountryController::class, 'getCountriesDataTable'])->name('countries.datatable');  // Get DataTable data
     Route::get('/summary', [CountryController::class, 'getSummary'])->name('countries.summary'); // Get summary data
     Route::get('/map', [CountryController::class, 'getMapData'])->name('countries.map'); // get map data

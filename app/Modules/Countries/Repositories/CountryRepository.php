@@ -7,8 +7,9 @@ use App\Modules\Areas\Models\Area;
 use App\Modules\Branches\Models\Branch;
 use App\Modules\City\Models\City;
 use App\Modules\Countries\Models\Country;
-use App\Helpers\ActivityLogger;
+use App\Modules\Countries\Models\CountryHistory;
 use App\Modules\States\Models\State;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -100,8 +101,15 @@ class CountryRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if (isset($data['draft']) && $data['draft'] == 1) {
-                $data['drafted_at'] = now();
+            if (isset($data['draft'])) {
+                if($data['draft'] == 1) {
+                    $data['drafted_at'] = now();
+                    $data['is_active'] = 0;
+                } else {
+                    $data['is_active'] = 1;
+                }
+            } else {
+                $data['is_active'] = 1;
             }
 
             // Handle file upload for 'flag'
@@ -112,11 +120,7 @@ class CountryRepository
             // Create the country record in the database
             $country = Country::create($data);
 
-            // Log activity
-            ActivityLogger::log('Country Add', 'Country', 'Country', $country->id, [
-                'name' => $country->name ?? '',
-                'code' => $country->code ?? ''
-            ]);
+            $this->countryHistoryCreate('Country Add');
 
             DB::commit();
 
@@ -141,8 +145,15 @@ class CountryRepository
         DB::beginTransaction();
         try {
             // Set drafted_at timestamp if it's a draft
-            if (isset($data['draft']) && $data['draft'] == 1) {
-                $data['drafted_at'] = now();
+            if (isset($data['draft'])) {
+                if($data['draft'] == 1) {
+                    $data['drafted_at'] = now();
+                    $data['is_active'] = 0;
+                } else {
+                    $data['is_active'] = 1;
+                }
+            } else {
+                $data['is_active'] = 1;
             }
 
             // Handle file upload for 'flag'
@@ -159,17 +170,17 @@ class CountryRepository
                     $this->delete($country);
                 } else {
                     // restore the data from soft-deleted
-                    $country->update([ 'is_deleted' => 0, 'deleted_at' => null, 'is_active' => 1 ]);
-                    // Log activity for update
-                    ActivityLogger::log('Country Updated', 'Country', 'Country', $country->id, [
-                        'name' => $country->name
+                    $country->update([
+                        'is_deleted' => 0,
+                        'deleted_at' => null,
+                        'is_active' => 1,
+                        'draft' => 0
                     ]);
+
+                    $this->countryHistoryCreate('Country Updated');
                 }
             } else {
-                // Log activity for update
-                ActivityLogger::log('Country Updated', 'Country', 'Country', $country->id, [
-                    'name' => $country->name
-                ]);
+                $this->countryHistoryCreate('Country Updated');
             }
 
             DB::commit();
@@ -201,18 +212,20 @@ class CountryRepository
             }
             */
 
-            $country->update([ 'is_deleted' => 1, 'is_active' => 0 ]);
+            $country->update([
+                'is_deleted' => 1,
+                'is_active' => 0,
+                'draft' => 1,
+                'deleted_at' => now()
+            ]);
             // Perform soft delete
             $deleted = $country->delete();
             if (!$deleted) {
                 DB::rollBack();
                 return false;
             }
-            // Log activity after successful deletion
-            ActivityLogger::log('Country Deleted', 'Country', 'Country', $country->id, [
-                'name' => $country->name ?? '',
-                'code' => $country->code ?? '',
-            ]);
+
+            $this->countryHistoryCreate('Country Deleted');
             DB::commit();
             return true;
         } catch (Exception $e) {
@@ -234,7 +247,7 @@ class CountryRepository
     {
         return Country::withTrashed()->find($id);
     }
-    public function storeFile($file)
+    private function storeFile($file)
     {
         // Define the directory path
         $filePath = 'files/images/country';
@@ -255,7 +268,7 @@ class CountryRepository
         $path = $filePath . '/' . $fileName;
         return $path;
     }
-    public function updateFile($file, $data)
+    private function updateFile($file, $data)
     {
         // Define the directory path
         $filePath = 'files/images/country';
@@ -279,7 +292,7 @@ class CountryRepository
         $path = $filePath . '/' . $fileName;
         return $path;
     }
-    public function deleteOldFile($data)
+    private function deleteOldFile($data)
     {
         if (!empty($data->flag)) {
             $oldFilePath = public_path($data->flag); // Use without prepending $filePath
@@ -329,7 +342,7 @@ class CountryRepository
                     'is_default' => $data['is_default'] ?? $country->is_default,
                     'draft' => $data['draft'] ?? $country->draft,
                     'drafted_at' => (isset($data['draft']) && $data['draft'] == 1) ? now() : $country->drafted_at,
-                    'is_active' => $data['is_active'] ?? $country->is_active,
+                    'is_active' => ((isset($data['draft']) && $data['draft'] == 1) || $country->draft == 1) ? 0 : 1,
                 ]);
 
                 // Handle flag image upload if provided
@@ -339,10 +352,8 @@ class CountryRepository
                     $country->update(['flag' => $flagPath]);
                 }
                 */
-                // Log activity for update
-                ActivityLogger::log('Country Updated', 'Country', 'Country', $country->id, [
-                    'name' => $country->name
-                ]);
+
+                $this->countryHistoryCreate('Country Updated');
             }
 
             DB::commit();
@@ -398,10 +409,8 @@ class CountryRepository
                     $country->update(['flag' => $flagPath]);
                 }
                 */
-                // Log activity for update
-                ActivityLogger::log('Country Created', 'Country', 'Country', $country->id, [
-                    'name' => $country->name
-                ]);
+
+                $this->countryHistoryCreate('Country Created');
             }
 
             DB::commit();
@@ -418,6 +427,86 @@ class CountryRepository
             ]);
 
             return null;
+        }
+    }
+    private function countryHistoryCreate(string $actionType, $exportPdf = false, $exportXls = false, $exportPrint = false): bool
+    {
+        DB::beginTransaction();
+        try {
+            // Get the authenticated user
+            $user = Auth::user();
+
+            CountryHistory::create([
+                'client_id' => $user->admin_client_id ?? null,
+                'action_date' => now(),
+                'action_by' => $user->name ?? null,
+                'action_type' => $actionType,
+                'export_pdf' => $exportPdf,
+                'export_xls' => $exportXls,
+                'export_print' => $exportPrint,
+            ]);
+            DB::commit();
+            return true;
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            // Log the error
+            Log::error('Error creating country history', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return false;
+        }
+    }
+    public function checkAvailability(array $data): bool
+    {
+        try {
+            $code = $data['code'] ?? null;
+            $name = $data['name'] ?? null;
+
+            // Check if either code or name already exists
+            $exists = Country::where(function ($query) use ($code, $name) {
+                if ($code) {
+                    $query->orWhere('code', $code);
+                }
+                if ($name) {
+                    $query->orWhere('name', $name);
+                }
+            })
+                ->exists();
+
+            // Return true if no match (available), false if exists (not available)
+            return $exists;
+        } catch (\Exception $e) {
+            Log::error('Error checking country availability', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // Default to false (not available) on error
+            return false;
+        }
+    }
+    public function history()
+    {
+        try {
+            $history = CountryHistory::orderBy('id', 'desc')->get();
+            return $history;
+        } catch (\Exception $e) {
+            Log::error('Error checking country history', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // Default to false (not available) on error
+            return false;
         }
     }
 }

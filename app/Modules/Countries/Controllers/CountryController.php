@@ -258,4 +258,19 @@ class CountryController extends AppBaseController
         }
         return $this->sendResponse([],'Country imported successfully!');
     }
+    // check availability
+    public function checkAvailability(CountryRequest $request)
+    {
+        $checkAvailability = $this->countryRepository->checkAvailability($request->all());
+        if ($checkAvailability) {
+            return $this->sendError('Country is already exist!', 500);
+        }
+        return $this->sendResponse([],'Country is available!');
+    }
+    // history
+    public function history()
+    {
+        $history = $this->countryRepository->history();
+        return $this->sendResponse($history,'Country history retrieved successfully.');
+    }
 }

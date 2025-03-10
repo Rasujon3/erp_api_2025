@@ -15,7 +15,7 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->string('code', 6);
             $table->string('name', 40);
-            $table->unsignedBigInteger('client_id');
+            $table->unsignedBigInteger('admin_user_id');
             $table->enum('type', ['system', 'super_admin', 'admin', 'super_user', 'user']); // Add appropriate ENUM values
             $table->string('password');
             $table->string('confirm_password');
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Foreign key constraint
-            $table->foreign('client_id')
+            $table->foreign('admin_user_id')
                 ->references('id')
                 ->on('admin_clients')
                 ->onDelete('cascade');

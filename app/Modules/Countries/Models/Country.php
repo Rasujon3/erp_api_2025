@@ -121,6 +121,13 @@ class Country extends Model
             'is_updated' => 'nullable|boolean',
         ];
     }
+    public static function checkAvailabilityRules()
+    {
+        return [
+            'code' => 'nullable|string|required_without:name',
+            'name' => 'nullable|string|required_without:code',
+        ];
+    }
 
     public function state() : hasMany
     {

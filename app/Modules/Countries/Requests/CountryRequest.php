@@ -40,6 +40,10 @@ class CountryRequest extends FormRequest
             return Country::listRules();
         }
 
+        if ($routeName === 'countries.checkAvailability') {
+            return Country::checkAvailabilityRules();
+        }
+
         $countryId = $this->route('country') ?: null;
         return Country::rules($countryId);
     }
