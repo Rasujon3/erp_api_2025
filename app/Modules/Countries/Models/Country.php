@@ -35,8 +35,7 @@ class Country extends Model
 
     public static function rules($countryId = null)
     {
-        $uniqueCodeRule = Rule::unique('countries', 'code')
-            ->whereNull('deleted_at');
+        $uniqueCodeRule = Rule::unique('countries', 'code');
 
         if ($countryId) {
             $uniqueCodeRule->ignore($countryId);
@@ -69,7 +68,7 @@ class Country extends Model
                 function ($attribute, $value, $fail) {
                     $countryId = request()->input(str_replace('.code', '.id', $attribute));
                     $exists = Country::where('code', $value)
-                        ->whereNull('deleted_at')
+                        # ->whereNull('deleted_at')
                         ->where('id', '!=', $countryId)
                         ->exists();
 
@@ -96,8 +95,7 @@ class Country extends Model
     }
     public static function importRules()
     {
-        $uniqueCodeRule = Rule::unique('countries', 'code')
-            ->whereNull('deleted_at');
+        $uniqueCodeRule = Rule::unique('countries', 'code');
         return [
             'countries' => 'required|array|min:1',
             'countries.*.code' => ['nullable', 'string', 'max:45', $uniqueCodeRule],
