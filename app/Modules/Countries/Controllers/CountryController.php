@@ -252,6 +252,11 @@ class CountryController extends AppBaseController
     // import data
     public function import(CountryRequest $request)
     {
+        // Check if countries table has any data
+        if ($this->countryRepository->hasData()) {
+            return $this->sendError('Import not allowed: Countries table already contains data.', 403);
+        }
+
         $import = $this->countryRepository->import($request);
         if (!$import) {
             return $this->sendError('Something went wrong!!! [CCBU-06]', 500);

@@ -509,4 +509,19 @@ class CountryRepository
             return false;
         }
     }
+    public function hasData(): bool
+    {
+        try {
+            // Check for any records, including soft-deleted ones
+            return Country::withTrashed()->exists();
+        } catch (\Exception $e) {
+            Log::error('Error checking countries table data', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return true; // Assume data exists on error to prevent import
+        }
+    }
 }
